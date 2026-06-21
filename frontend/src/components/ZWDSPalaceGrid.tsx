@@ -80,24 +80,22 @@ export default function ZWDSPalaceGrid({
       }
     });
 
-    const getFallbackDecadalRange = (palaceName: string): string => {
-      const nameLower = palaceName.toLowerCase();
-      if (nameLower.includes("spouse")) return "06-15";
-      if (nameLower.includes("sibling")) return "16-25";
-      if (nameLower.includes("ming") || nameLower.includes("self")) return "26-35";
-      if (nameLower.includes("parent")) return "36-45";
-      if (nameLower.includes("happi") || nameLower.includes("fude")) return "46-55";
-      if (nameLower.includes("property") || nameLower.includes("tian")) return "56-65";
-      if (nameLower.includes("career") || nameLower.includes("guan")) return "66-75";
-      if (nameLower.includes("friend") || nameLower.includes("slav") || nameLower.includes("jia")) return "76-85";
-      if (nameLower.includes("travel") || nameLower.includes("qian")) return "86-95";
-      if (nameLower.includes("health") || nameLower.includes("ji")) return "96-105";
-      if (nameLower.includes("wealth") || nameLower.includes("cai")) return "106-115";
-      if (nameLower.includes("child")) return "116-125";
-      return "00-00";
+    const branchToAgeRange: Record<string, string> = {
+      "Si": "4–13",
+      "Wu": "14–23",
+      "Wei": "24–33",
+      "Shen": "34–43",
+      "You": "44–53",
+      "Xu": "54–63",
+      "Hai": "64–73",
+      "Zi": "74–83",
+      "Chou": "84–93",
+      "Yin": "94–103",
+      "Mao": "104–113",
+      "Chen": "114–123"
     };
 
-    const decadalAgeRange = palace.decadal_range || getFallbackDecadalRange(palace.name);
+    const decadalAgeRange = branchToAgeRange[branch] || palace.decadal_range || "00-00";
 
     return {
       palace,
