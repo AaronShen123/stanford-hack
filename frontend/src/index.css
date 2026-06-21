@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  background-color: #fafaf9; /* Stone 50 light premium background */
+  color: #1c1917; /* Stone 900 */
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Custom scrollbar styling for premium UI */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f5f5f4; /* Stone 100 */
+}
+::-webkit-scrollbar-thumb {
+  background: #d6d3d1; /* Stone 300 */
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a29e; /* Stone 400 */
+}

@@ -1,0 +1,22 @@
+# Environment variables
+.env
+.env.*
+.env.local
+
+# Python caches and artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Node caches and artifacts
+node_modules/
+dist/
+dist-ssr/
+*.log
+
+# System files
+.DS_Store
+Thumbs.db
