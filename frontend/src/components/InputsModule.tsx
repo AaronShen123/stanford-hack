@@ -120,8 +120,18 @@ export default function InputsModule({ onSubmit, isLoading }: InputsModuleProps)
               maxLength={8}
               value={birthTime}
               onChange={(e) => {
-                const val = e.target.value.replace(/[^0-9:]/g, '');
-                setBirthTime(val);
+                const rawDigits = e.target.value.replace(/\D/g, "");
+                let formatted = "";
+                if (rawDigits.length > 0) {
+                  formatted += rawDigits.slice(0, 2);
+                }
+                if (rawDigits.length > 2) {
+                  formatted += ":" + rawDigits.slice(2, 4);
+                }
+                if (rawDigits.length > 4) {
+                  formatted += ":" + rawDigits.slice(4, 6);
+                }
+                setBirthTime(formatted);
               }}
               className="w-full h-11 px-3 bg-white border border-stone-300 rounded-lg text-stone-900 placeholder-stone-400 focus:outline-none focus:border-stone-950 text-sm flex items-center font-sans font-medium transition-colors duration-200 hover:border-stone-400"
             />
