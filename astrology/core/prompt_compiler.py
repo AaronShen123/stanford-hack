@@ -15,6 +15,34 @@ def get_anthropic_client():
         raise ValueError("ANTHROPIC_API_KEY environment variable is not set. Please set it or add it to a .env file.")
     return anthropic.AsyncAnthropic(api_key=api_key)
 
+STAR_LOCALIZATION_DICTIONARY = {
+    "Zi Wei": "Emperor",
+    "Tian Fu": "Heavenly Mansion",
+    "Zuo Fu": "Intellect",
+    "You Bi": "Right Assist",
+    "Tian Ji": "Advisor",
+    "Tai Yang": "Sun",
+    "Tai Yin": "Moon",
+    "Wu Qu": "Finance",
+    "Tian Tong": "Mascot",
+    "Lian Zhen": "Justice",
+    "Tan Lang": "Flirt",
+    "Ju Men": "Advocate",
+    "Tian Liang": "Blessing",
+    "Qi Sha": "Marshal",
+    "Po Jun": "Pioneer",
+    "Tian Xiang": "Minister",
+    "Wen Qu": "Arts",
+    "Wen Chang": "Academic",
+    "Lu Cun": "Wealth Star",
+    "Tian Kui": "Status",
+    "Tian Yue": "Grace",
+    "Qing Yang": "Sternness",
+    "Tuo Luo": "Obstacle",
+    "Di Kong": "Void",
+    "Di Jie": "Exhaust"
+}
+
 def compile_prompt(
     astrology_data: dict,
     context_chunks: list,
@@ -30,6 +58,12 @@ We have parsed raw birth data into a hybrid deterministic matrix containing:
 1. Western Ephemeris degrees and Placidus houses.
 2. Chinese Zi Wei Dou Shu (ZWDS) palace locations.
 3. Aspect calculations and cross-system overlap risk triggers.
+
+Here is the central Star Localization Dictionary used on the frontend UI:
+{json.dumps(STAR_LOCALIZATION_DICTIONARY, indent=2)}
+
+IMPORTANT LOCALIZATION RULE:
+Please ensure that in your analysis and output report, you reference stars using both their English UI labels and Pinyin (e.g., "Finance (Wu Qu)", "Mascot (Tian Tong)", "Wealth Star (Lu Cun)", "Flirt (Tan Lang)", "Void (Di Kong)", "Exhaust (Di Jie)") so that the generated report text matches the exact UI labels rendered on the frontend interface.
 
 Here is the parsed JSON astrology data payload:
 {json.dumps(astrology_data, indent=2)}

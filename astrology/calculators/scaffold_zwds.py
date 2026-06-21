@@ -194,9 +194,64 @@ class ScaffoldZWDSCalculator(AbstractZWDSCalculator):
             }
         ]
         
+        # Fallback calculation of Year and Month Bazi and Lunar Date
+        year = tlt_datetime.year
+        month = tlt_datetime.month
+        day = tlt_datetime.day
+        hour = tlt_datetime.hour
+
+        stems = ["Jia", "Yi", "Bing", "Ding", "Wu", "Ji", "Geng", "Xin", "Ren", "Gui"]
+        branches = ["Zi", "Chou", "Yin", "Mao", "Chen", "Si", "Wu", "Wei", "Shen", "You", "Xu", "Hai"]
+        
+        y_stem_idx = (year - 4) % 10
+        y_branch_idx = (year - 4) % 12
+        yearly_stem_branch = f"{stems[y_stem_idx]}-{branches[y_branch_idx]}"
+        
+        m_branch_idx = month % 12
+        m_branch = branches[m_branch_idx]
+        
+        start_stem_for_chou = {
+            0: 3, 5: 3,
+            1: 5, 6: 5,
+            2: 7, 7: 7,
+            3: 9, 8: 9,
+            4: 1, 9: 1
+        }
+        base_stem = start_stem_for_chou[y_stem_idx]
+        m_stem_idx = (base_stem + (month - 1)) % 10
+        monthly_branch = f"{stems[m_stem_idx]}-{m_branch}"
+        
+        lny_offsets = {
+            1990: 27,
+            2000: 36,
+            2026: 48
+        }
+        lny_day = lny_offsets.get(year, 30)
+        
+        import datetime
+        birth_date = datetime.date(year, month, day)
+        lny_date = datetime.date(year, 1, 1) + datetime.timedelta(days=lny_day - 1)
+        if birth_date < lny_date:
+            l_year = year - 1
+            prev_lny_day = lny_offsets.get(l_year, 30)
+            prev_lny_date = datetime.date(l_year, 1, 1) + datetime.timedelta(days=prev_lny_day - 1)
+            days_since = (birth_date - prev_lny_date).days
+        else:
+            l_year = year
+            days_since = (birth_date - lny_date).days
+            
+        l_month = int(days_since / 29.53) + 1
+        l_day = int(days_since % 29.53) + 1
+        
+        hour_labels = ["Zi", "Chou", "Yin", "Mao", "Chen", "Si", "Wu", "Wei", "Shen", "You", "Xu", "Hai"]
+        h_branch_idx = int((hour + 1) % 24 / 2)
+        hour_label = hour_labels[h_branch_idx]
+        
+        lunar_date_str = f"Year {yearly_stem_branch.split('-')[0]} ({l_year}), Month {l_month}, Day {l_day}, Hour {hour_label} (estimated)"
+
         return {
             "palaces": palaces,
-            "yearly_stem_branch": "Bing-Wu",
-            "monthly_branch": "Wu-Shen",
-            "lunar_date_str": "Year 2026, Month 5, Day 7, Hour Wu (estimated)"
+            "yearly_stem_branch": yearly_stem_branch,
+            "monthly_branch": monthly_branch,
+            "lunar_date_str": lunar_date_str
         }
