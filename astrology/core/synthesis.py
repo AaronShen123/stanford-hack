@@ -1,5 +1,182 @@
 from typing import List, Dict, Any
-from astrology.models import AstrologyAspect, SynthesisFlags, WesternMatrix, ZWDSMatrix
+from astrology.models import AstrologyAspect, SynthesisFlags, WesternMatrix, ZWDSMatrix, ZWDSPattern, ZWDSPalace
+
+BRANCHES = ["Zi", "Chou", "Yin", "Mao", "Chen", "Si", "Wu", "Wei", "Shen", "You", "Xu", "Hai"]
+
+VECTOR_TO_PALACE = {
+    "wealth": "Wealth",
+    "affinity": "Marriage",
+    "vitality": "Health",
+    "macro_evolution": "Life"
+}
+
+def find_palace_by_name(matrix: ZWDSMatrix, target_name: str) -> ZWDSPalace:
+    for palace in matrix.palaces:
+        if target_name.lower() in palace.name.lower():
+            return palace
+    return None
+
+def find_life_palace(matrix: ZWDSMatrix) -> ZWDSPalace:
+    for palace in matrix.palaces:
+        name = palace.name.lower()
+        if "life" in name or "命" in name or "ming" in name:
+            return palace
+    return None
+
+def get_palace_branch_index(palace: ZWDSPalace) -> int:
+    parts = palace.stem_branch.split("-")
+    branch = parts[1] if len(parts) > 1 else parts[0]
+    branch = branch.strip().title()
+    if branch in BRANCHES:
+        return BRANCHES.index(branch)
+    return -1
+
+def get_relational_matrix(matrix: ZWDSMatrix, target_palace_name: str) -> List[ZWDSPalace]:
+    target_palace = find_palace_by_name(matrix, target_palace_name)
+    if not target_palace:
+        return []
+    
+    target_idx = get_palace_branch_index(target_palace)
+    if target_idx == -1:
+        return [target_palace]
+        
+    branch_map = {}
+    for p in matrix.palaces:
+        parts = p.stem_branch.split("-")
+        b = parts[1] if len(parts) > 1 else parts[0]
+        b_clean = b.strip().title()
+        if b_clean in BRANCHES:
+            branch_map[BRANCHES.index(b_clean)] = p
+        
+    opposite_idx = (target_idx + 6) % 12
+    trine1_idx = (target_idx + 4) % 12
+    trine2_idx = (target_idx + 8) % 12
+    
+    relational_palaces = [target_palace]
+    for idx in (opposite_idx, trine1_idx, trine2_idx):
+        if idx in branch_map:
+            relational_palaces.append(branch_map[idx])
+            
+    return relational_palaces
+
+def get_flanking_matrix(matrix: ZWDSMatrix, target_palace_name: str) -> List[ZWDSPalace]:
+    target_palace = find_palace_by_name(matrix, target_palace_name)
+    if not target_palace:
+        return []
+    
+    target_idx = get_palace_branch_index(target_palace)
+    if target_idx == -1:
+        return []
+        
+    branch_map = {}
+    for p in matrix.palaces:
+        parts = p.stem_branch.split("-")
+        b = parts[1] if len(parts) > 1 else parts[0]
+        b_clean = b.strip().title()
+        if b_clean in BRANCHES:
+            branch_map[BRANCHES.index(b_clean)] = p
+        
+    flank1_idx = (target_idx - 1) % 12
+    flank2_idx = (target_idx + 1) % 12
+    
+    flanking_palaces = []
+    for idx in (flank1_idx, flank2_idx):
+        if idx in branch_map:
+            flanking_palaces.append(branch_map[idx])
+            
+    return flanking_palaces
+
+def calculate_palace_friction_index(matrix: ZWDSMatrix, target_palace_name: str) -> float:
+    relational_palaces = get_relational_matrix(matrix, target_palace_name)
+    if not relational_palaces:
+        return 0.0
+        
+    malefic_count = 0
+    benefic_count = 0
+    for p in relational_palaces:
+        for star in p.stars_metadata:
+            if star.classification == "Malefic":
+                malefic_count += 1
+            elif star.classification == "Benefic":
+                benefic_count += 1
+                
+    total = malefic_count + benefic_count
+    if total == 0:
+        return 0.0
+    return round((malefic_count / total) * 100.0, 2)
+
+def palace_has_star(palace: ZWDSPalace, star_keywords: List[str]) -> bool:
+    for star in palace.stars + [s.name for s in palace.stars_metadata]:
+        s_name = star.lower()
+        if any(kw in s_name for kw in star_keywords):
+            return True
+    return False
+
+def detect_zwds_patterns(matrix: ZWDSMatrix) -> List[ZWDSPattern]:
+    patterns = []
+    
+    life_palace = find_life_palace(matrix)
+    if not life_palace:
+        return [
+            ZWDSPattern(name="【文星拱命格】", is_triggered=False, description="Life Palace or trines contain both Wen Chang & Wen Qu."),
+            ZWDSPattern(name="【空劫夾命格】", is_triggered=False, description="Life Palace is flanked by Di Jie & Di Kong in adjacent palaces.")
+        ]
+        
+    life_idx = get_palace_branch_index(life_palace)
+    if life_idx == -1:
+        return [
+            ZWDSPattern(name="【文星拱命格】", is_triggered=False, description="Life Palace or trines contain both Wen Chang & Wen Qu."),
+            ZWDSPattern(name="【空劫夾命格】", is_triggered=False, description="Life Palace is flanked by Di Jie & Di Kong in adjacent palaces.")
+        ]
+    
+    branch_map = {}
+    for p in matrix.palaces:
+        parts = p.stem_branch.split("-")
+        b = parts[1] if len(parts) > 1 else parts[0]
+        b_clean = b.strip().title()
+        if b_clean in BRANCHES:
+            branch_map[BRANCHES.index(b_clean)] = p
+        
+    # Pattern 1: 【文星拱命格】
+    trine1_idx = (life_idx + 4) % 12
+    trine2_idx = (life_idx + 8) % 12
+    trine1 = branch_map.get(trine1_idx)
+    trine2 = branch_map.get(trine2_idx)
+    
+    has_wen_chang = False
+    has_wen_qu = False
+    for p in [life_palace, trine1, trine2]:
+        if p:
+            if palace_has_star(p, ["wen chang", "academic"]):
+                has_wen_chang = True
+            if palace_has_star(p, ["wen qu", "arts"]):
+                has_wen_qu = True
+                
+    wen_star_triggered = has_wen_chang and has_wen_qu
+    patterns.append(ZWDSPattern(
+        name="【文星拱命格】",
+        is_triggered=wen_star_triggered,
+        description="Life Palace or trines contain both Wen Chang (Academic) and Wen Qu (Arts) stars, indicating literary talent and intellect."
+    ))
+    
+    # Pattern 2: 【空劫夾命格】
+    flanking = get_flanking_matrix(matrix, life_palace.name)
+    kong_jie_triggered = False
+    if len(flanking) == 2:
+        f1, f2 = flanking[0], flanking[1]
+        has_jie1 = palace_has_star(f1, ["di jie", "exhaust"])
+        has_kong1 = palace_has_star(f1, ["di kong", "void"])
+        has_jie2 = palace_has_star(f2, ["di jie", "exhaust"])
+        has_kong2 = palace_has_star(f2, ["di kong", "void"])
+        kong_jie_triggered = (has_jie1 and has_kong2) or (has_kong1 and has_jie2)
+        
+    patterns.append(ZWDSPattern(
+        name="【空劫夾命格】",
+        is_triggered=kong_jie_triggered,
+        description="Life Palace is flanked by Di Jie (Exhaust) and Di Kong (Void) in adjacent palaces, indicating sudden setbacks and fluctuations."
+    ))
+    
+    return patterns
 
 def get_planet_house(longitude: float, cusps: Dict[int, float]) -> int:
     """
@@ -210,6 +387,10 @@ def generate_synthesis_flags(
     # Check if the coordinates or parameters are near branch boundary
     # We set dual_matrix_indicator if branch boundary anomaly is detected (handled at main level)
     
+    target_palace_name = VECTOR_TO_PALACE.get(target_vector, "Life")
+    palace_friction = calculate_palace_friction_index(zwds, target_palace_name)
+    detected_pats = detect_zwds_patterns(zwds)
+
     return SynthesisFlags(
         friction_index=round(friction_index, 2),
         friction_points=friction_points,
@@ -218,5 +399,7 @@ def generate_synthesis_flags(
         dual_matrix_indicator=False, # Set downstream in main.py
         critical_bottleneck=critical_bottleneck,
         interpersonal_risk=interpersonal_risk,
-        systemic_exhaustion=systemic_exhaustion
+        systemic_exhaustion=systemic_exhaustion,
+        palace_friction_index=palace_friction,
+        detected_patterns=detected_pats
     )

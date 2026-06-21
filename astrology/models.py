@@ -71,6 +71,12 @@ class WesternMatrix(BaseModel):
     houses: Dict[int, float] = Field(..., description="Cusp degrees for houses 1 to 12")
 
 
+class StarMetadata(BaseModel):
+    name: str
+    brightness_index: str = "Neutral" # Radiant, Neutral, Dark
+    classification: str = "Benefic" # Benefic, Malefic
+    archetype_definition: str = ""
+
 class MainStarModel(BaseModel):
     name: str
     status: Optional[str] = ""
@@ -85,6 +91,7 @@ class ZWDSPalace(BaseModel):
     changsheng: str = Field("", description="Cosmic vitality stage")
     pillar_gods: List[str] = Field(default_factory=list, description="Pillar gods descriptors")
     one_year_luck: str = Field("", description="One year luck bounds")
+    stars_metadata: List[StarMetadata] = Field(default_factory=list, description="Extended star definitions")
 
 
 class ZWDSMatrix(BaseModel):
@@ -102,6 +109,11 @@ class AstrologyAspect(BaseModel):
     orb: float
 
 
+class ZWDSPattern(BaseModel):
+    name: str
+    is_triggered: bool
+    description: str
+
 class SynthesisFlags(BaseModel):
     friction_index: float = Field(..., description="Calculated structural friction index")
     friction_points: List[str] = Field(default_factory=list, description="Friction points list")
@@ -111,6 +123,8 @@ class SynthesisFlags(BaseModel):
     critical_bottleneck: bool = Field(False, description="Flag for unified wealth bottleneck conditions")
     interpersonal_risk: bool = Field(False, description="Flag for unified interpersonal risk conditions")
     systemic_exhaustion: bool = Field(False, description="Flag for unified systemic health exhaustion conditions")
+    palace_friction_index: float = Field(0.0, description="Palace friction index score")
+    detected_patterns: List[ZWDSPattern] = Field(default_factory=list, description="Patterns identified in the chart")
 
 
 class AstrologyResponse(BaseModel):

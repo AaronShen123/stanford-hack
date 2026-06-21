@@ -35,6 +35,13 @@ export interface WesternMatrix {
   houses: Record<number, number>;
 }
 
+export interface StarMetadata {
+  name: string;
+  brightness_index: string;
+  classification: string;
+  archetype_definition: string;
+}
+
 export interface ZWDSPalace {
   name: string;
   stem_branch: string;
@@ -45,6 +52,7 @@ export interface ZWDSPalace {
   changsheng?: string;
   pillar_gods?: string[];
   one_year_luck?: string;
+  stars_metadata?: StarMetadata[];
 }
 
 export interface ZWDSMatrix {
@@ -62,6 +70,12 @@ export interface AstrologyAspect {
   orb: number;
 }
 
+export interface ZWDSPattern {
+  name: string;
+  is_triggered: boolean;
+  description: string;
+}
+
 export interface SynthesisFlags {
   friction_index: number;
   friction_points: string[];
@@ -71,6 +85,8 @@ export interface SynthesisFlags {
   critical_bottleneck: boolean;
   interpersonal_risk: boolean;
   systemic_exhaustion: boolean;
+  palace_friction_index: number;
+  detected_patterns: ZWDSPattern[];
 }
 
 export interface AstrologyResponse {

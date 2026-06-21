@@ -73,6 +73,76 @@ const branchToYear = {
     "Chen": "35, 47, 59"
 };
 
+const starMapping = {
+    // Emperor, Heavenly Mansion, Advisor, Sun, Moon, Finance, Mascot, Blessing, Minister, Intellect, Right Assist, Academic, Arts, Wealth Star, Status, Grace, Hua Lu
+    "Emperor": { classification: "Benefic", archetype: "Sovereign power, leadership, and authority." },
+    "Heavenly Mansion": { classification: "Benefic", archetype: "Treasury, stability, conservation, and resource management." },
+    "Advisor": { classification: "Benefic", archetype: "Intellect, strategy, planning, and mental agility." },
+    "Sun": { classification: "Benefic", archetype: "Altruism, public service, energy, and outgoing expression." },
+    "Moon": { classification: "Benefic", archetype: "Refined wealth, emotional depth, intuition, and receptive wisdom." },
+    "Finance": { classification: "Benefic", archetype: "Material success, executive action, and financial accumulation." },
+    "Mascot": { classification: "Benefic", archetype: "Pleasure, emotional comfort, resilience, and general good fortune." },
+    "Blessing": { classification: "Benefic", archetype: "Protection, longevity, benevolence, and oversight." },
+    "Minister": { classification: "Benefic", archetype: "Diplomacy, service, trust, and administrative execution." },
+    "Intellect": { classification: "Benefic", archetype: "Supportive counsel, coordination, and cooperative assistance." },
+    "Right Assist": { classification: "Benefic", archetype: "Flexible cooperation, emotional support, and auxiliary aid." },
+    "Academic": { classification: "Benefic", archetype: "Formal education, literature, intellect, and credentialing." },
+    "Arts": { classification: "Benefic", archetype: "Intuitive learning, creative arts, charm, and communication." },
+    "Wealth Star": { classification: "Benefic", archetype: "Preserved wealth, abundance, and structural stability." },
+    "Status": { classification: "Benefic", archetype: "Direct opportunity, nobility, and mentorship from seniors." },
+    "Grace": { classification: "Benefic", archetype: "Subtle opportunities, unexpected aid, and charm." },
+    "Hua Lu": { classification: "Benefic", archetype: "Multiplier of wealth, smooth flow, and opportunity." },
+    "Hua Quan": { classification: "Benefic", archetype: "Authority, control, competitive drive, and power." },
+    "Hua Ke": { classification: "Benefic", archetype: "Academic reputation, harmony, and recognition." },
+    "Tian Wu": { classification: "Benefic", archetype: "Inheritance, mystical affinity, and sudden advancement." },
+
+    // Malefic: Justice, Flirt, Marshal, Pioneer, Sternness, Obstacle, Void, Exhaust, Hua Ji
+    "Justice": { classification: "Malefic", archetype: "Strict discipline, complex desires, legal boundaries, and intensity." },
+    "Flirt": { classification: "Malefic", archetype: "Desire, social charisma, spiritual seeking, and material ambition." },
+    "Marshal": { classification: "Malefic", archetype: "Determination, direct action, breakthrough, and stern authority." },
+    "Pioneer": { classification: "Malefic", archetype: "Destruction and rebuilding, bold innovation, and volatile change." },
+    "Sternness": { classification: "Malefic", archetype: "Aggressiveness, decisive cuts, physical drive, and conflict." },
+    "Obstacle": { classification: "Malefic", archetype: "Delay, hesitation, lingering obstacles, and persistent struggle." },
+    "Void": { classification: "Malefic", archetype: "Mental void, spiritual seeking, material loss, and unconventional thinking." },
+    "Exhaust": { classification: "Malefic", archetype: "Material drainage, sudden set-backs, and physical exhaustion." },
+    "Hua Ji": { classification: "Malefic", archetype: "Attachment, obsession, karmic debt, and obstacles." },
+    "Gu Chen": { classification: "Malefic", archetype: "Loneliness, independence, and social distance." },
+    "Tian Kong": { classification: "Malefic", archetype: "Sky void, detachment, and loss of material focus." },
+    "Advocate": { classification: "Malefic", archetype: "Communication, critical analysis, hidden obstacles, and debate." }
+};
+
+function buildStarsMetadata(mainStars, minorStars) {
+    const metadata = [];
+    (mainStars || []).forEach(s => {
+        const name = s.name;
+        const status = s.status || "";
+        let brightness = "Neutral";
+        if (status === "Radiant" || status === "廟" || status === "Miao") {
+            brightness = "Radiant";
+        } else if (status === "Exhaust" || status === "陷" || status === "Xian" || status === "Dark") {
+            brightness = "Dark";
+        }
+        const info = starMapping[name] || { classification: "Benefic", archetype: "" };
+        metadata.push({
+            name: name,
+            brightness_index: brightness,
+            classification: info.classification,
+            archetype_definition: info.archetype
+        });
+    });
+    (minorStars || []).forEach(name => {
+        const cleanName = name.replace(/\s*\(.*\)/g, "").trim();
+        const info = starMapping[cleanName] || starMapping[name] || { classification: "Benefic", archetype: "" };
+        metadata.push({
+            name: name,
+            brightness_index: "Neutral",
+            classification: info.classification,
+            archetype_definition: info.archetype
+        });
+    });
+    return metadata;
+}
+
 function main() {
     try {
         const inputData = fs.readFileSync(0, 'utf-8');
@@ -295,6 +365,9 @@ function main() {
                 // Keep default values if anything fails
             }
 
+            fallbackResponse.palaces.forEach(p => {
+                p.stars_metadata = buildStarsMetadata(p.main_stars, p.minor_stars);
+            });
             console.log(JSON.stringify(fallbackResponse));
             process.exit(0);
         }
@@ -356,7 +429,8 @@ function main() {
                 minor_stars: minorStars,
                 changsheng: details.changsheng,
                 pillar_gods: details.pillar_gods,
-                one_year_luck: branchToYear[branch] || ""
+                one_year_luck: branchToYear[branch] || "",
+                stars_metadata: buildStarsMetadata(mainStars, minorStars)
             };
         });
         

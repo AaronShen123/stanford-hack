@@ -6,6 +6,74 @@ from datetime import datetime
 from typing import Dict, Any
 from astrology.calculators.base_zwds import AbstractZWDSCalculator
 
+STAR_MAPPING = {
+    # Emperor, Heavenly Mansion, Advisor, Sun, Moon, Finance, Mascot, Blessing, Minister, Intellect, Right Assist, Academic, Arts, Wealth Star, Status, Grace, Hua Lu
+    "Emperor": {"name": "Emperor", "classification": "Benefic", "archetype": "Sovereign power, leadership, and authority."},
+    "Heavenly Mansion": {"name": "Heavenly Mansion", "classification": "Benefic", "archetype": "Treasury, stability, conservation, and resource management."},
+    "Advisor": {"name": "Advisor", "classification": "Benefic", "archetype": "Intellect, strategy, planning, and mental agility."},
+    "Sun": {"name": "Sun", "classification": "Benefic", "archetype": "Altruism, public service, energy, and outgoing expression."},
+    "Moon": {"name": "Moon", "classification": "Benefic", "archetype": "Refined wealth, emotional depth, intuition, and receptive wisdom."},
+    "Finance": {"name": "Finance", "classification": "Benefic", "archetype": "Material success, executive action, and financial accumulation."},
+    "Mascot": {"name": "Mascot", "classification": "Benefic", "archetype": "Pleasure, emotional comfort, resilience, and general good fortune."},
+    "Blessing": {"name": "Blessing", "classification": "Benefic", "archetype": "Protection, longevity, benevolence, and oversight."},
+    "Minister": {"name": "Minister", "classification": "Benefic", "archetype": "Diplomacy, service, trust, and administrative execution."},
+    "Intellect": {"name": "Intellect", "classification": "Benefic", "archetype": "Supportive counsel, coordination, and cooperative assistance."},
+    "Right Assist": {"name": "Right Assist", "classification": "Benefic", "archetype": "Flexible cooperation, emotional support, and auxiliary aid."},
+    "Academic": {"name": "Academic", "classification": "Benefic", "archetype": "Formal education, literature, intellect, and credentialing."},
+    "Arts": {"name": "Arts", "classification": "Benefic", "archetype": "Intuitive learning, creative arts, charm, and communication."},
+    "Wealth Star": {"name": "Wealth Star", "classification": "Benefic", "archetype": "Preserved wealth, abundance, and structural stability."},
+    "Status": {"name": "Status", "classification": "Benefic", "archetype": "Direct opportunity, nobility, and mentorship from seniors."},
+    "Grace": {"name": "Grace", "classification": "Benefic", "archetype": "Subtle opportunities, unexpected aid, and charm."},
+    "Hua Lu": {"name": "Hua Lu", "classification": "Benefic", "archetype": "Multiplier of wealth, smooth flow, and opportunity."},
+    "Hua Quan": {"name": "Hua Quan", "classification": "Benefic", "archetype": "Authority, control, competitive drive, and power."},
+    "Hua Ke": {"name": "Hua Ke", "classification": "Benefic", "archetype": "Academic reputation, harmony, and recognition."},
+    "Tian Wu": {"name": "Tian Wu", "classification": "Benefic", "archetype": "Inheritance, mystical affinity, and sudden advancement."},
+
+    # Malefic: Justice, Flirt, Marshal, Pioneer, Sternness, Obstacle, Void, Exhaust, Hua Ji
+    "Justice": {"name": "Justice", "classification": "Malefic", "archetype": "Strict discipline, complex desires, legal boundaries, and intensity."},
+    "Flirt": {"name": "Flirt", "classification": "Malefic", "archetype": "Desire, social charisma, spiritual seeking, and material ambition."},
+    "Marshal": {"name": "Marshal", "classification": "Malefic", "archetype": "Determination, direct action, breakthrough, and stern authority."},
+    "Pioneer": {"name": "Pioneer", "classification": "Malefic", "archetype": "Destruction and rebuilding, bold innovation, and volatile change."},
+    "Sternness": {"name": "Sternness", "classification": "Malefic", "archetype": "Aggressiveness, decisive cuts, physical drive, and conflict."},
+    "Obstacle": {"name": "Obstacle", "classification": "Malefic", "archetype": "Delay, hesitation, lingering obstacles, and persistent struggle."},
+    "Void": {"name": "Void", "classification": "Malefic", "archetype": "Mental void, spiritual seeking, material loss, and unconventional thinking."},
+    "Exhaust": {"name": "Exhaust", "classification": "Malefic", "archetype": "Material drainage, sudden set-backs, and physical exhaustion."},
+    "Hua Ji": {"name": "Hua Ji", "classification": "Malefic", "archetype": "Attachment, obsession, karmic debt, and obstacles."},
+    "Gu Chen": {"name": "Gu Chen", "classification": "Malefic", "archetype": "Loneliness, independence, and social distance."},
+    "Tian Kong": {"name": "Tian Kong", "classification": "Malefic", "archetype": "Sky void, detachment, and loss of material focus."},
+    "Advocate": {"name": "Advocate", "classification": "Malefic", "archetype": "Communication, critical analysis, hidden obstacles, and debate."},
+}
+
+def build_stars_metadata(palace: Dict[str, Any]) -> list:
+    metadata = []
+    for s in palace.get("main_stars", []):
+        name = s.get("name", "")
+        status = s.get("status", "")
+        brightness = "Neutral"
+        if status in ("Radiant", "廟", "Miao"):
+            brightness = "Radiant"
+        elif status in ("Exhaust", "陷", "Xian", "Dark"):
+            brightness = "Dark"
+        
+        info = STAR_MAPPING.get(name, {"name": name, "classification": "Benefic", "archetype": ""})
+        metadata.append({
+            "name": name,
+            "brightness_index": brightness,
+            "classification": info["classification"],
+            "archetype_definition": info["archetype"]
+        })
+    for name in palace.get("minor_stars", []):
+        import re
+        clean_name = re.sub(r"\s*\(.*\)", "", name).strip()
+        info = STAR_MAPPING.get(clean_name, STAR_MAPPING.get(name, {"name": name, "classification": "Benefic", "archetype": ""}))
+        metadata.append({
+            "name": name,
+            "brightness_index": "Neutral",
+            "classification": info["classification"],
+            "archetype_definition": info["archetype"]
+        })
+    return metadata
+
 class ScaffoldZWDSCalculator(AbstractZWDSCalculator):
     """
     Concrete implementation of ZWDS calculator using an asynchronous subprocess 
@@ -248,6 +316,9 @@ class ScaffoldZWDSCalculator(AbstractZWDSCalculator):
         hour_label = hour_labels[h_branch_idx]
         
         lunar_date_str = f"Year {yearly_stem_branch.split('-')[0]} ({l_year}), Month {l_month}, Day {l_day}, Hour {hour_label} (estimated)"
+
+        for p in palaces:
+            p["stars_metadata"] = build_stars_metadata(p)
 
         return {
             "palaces": palaces,
