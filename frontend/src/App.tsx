@@ -51,18 +51,138 @@ const MOCK_GOD_MODE_RESPONSE: Record<string, any> = {
       },
       zwds_matrix: {
         palaces: [
-          { name: "Ming (Self)", stem_branch: "Ji-Si", stars: ["Zi Wei", "Tian Fu", "Zuo Fu"], decadal_range: "26-35" },
-          { name: "Siblings", stem_branch: "Geng-Chen", stars: ["Tian Ji", "You Bi"], decadal_range: "16-25" },
-          { name: "Spouse", stem_branch: "Xin-Mao", stars: ["Tai Yang", "Wen Qu", "Hua-Ji"], decadal_range: "06-15" },
-          { name: "Children", stem_branch: "Ren-Yin", stars: ["Wu Qu", "Tian Kui"], decadal_range: "116-125" },
-          { name: "Wealth", stem_branch: "Gui-Chou", stars: ["Tian Tong", "Lu Cun"], decadal_range: "106-115" },
-          { name: "Health", stem_branch: "Jia-Zi", stars: ["Lian Zhen (Xian)", "Tian Yue"], decadal_range: "96-105" },
-          { name: "Travel", stem_branch: "Yi-Hai", stars: ["Tian Ji", "Qing Yang"], decadal_range: "86-95" },
-          { name: "Friends", stem_branch: "Bing-Xu", stars: ["Tai Yin", "Tuo Luo"], decadal_range: "76-85" },
-          { name: "Career", stem_branch: "Ding-You", stars: ["Tan Lang", "Di Kong"], decadal_range: "66-75" },
-          { name: "Property", stem_branch: "Wu-Shen", stars: ["Ju Men", "Di Jie"], decadal_range: "56-65" },
-          { name: "Happiness", stem_branch: "Ji-Wei", stars: ["Tian Liang", "Hua Lu"], decadal_range: "46-55" },
-          { name: "Parents", stem_branch: "Geng-Wu", stars: ["Qi Sha", "Hua Quan"], decadal_range: "36-45" }
+          {
+            name: "Life Palace (命宮)",
+            stem_branch: "Ji-Si",
+            stars: ["Zi Wei", "Tian Fu", "Zuo Fu"],
+            decadal_range: "4–13",
+            main_stars: [{ name: "Emperor", status: "Radiant" }, { name: "Heavenly Mansion", status: "Radiant" }],
+            minor_stars: ["Intellect", "Tian Kong", "Gu Chen", "Tian Wu"],
+            changsheng: "Birth",
+            pillar_gods: ["Stern", "Beginning"],
+            one_year_luck: "36, 48, 60"
+          },
+          {
+            name: "Parents Palace (父母)",
+            stem_branch: "Geng-Wu",
+            stars: ["Qi Sha", "Hua Quan"],
+            decadal_range: "14–23",
+            main_stars: [{ name: "Marshal", status: "Radiant" }],
+            minor_stars: ["Hua Quan"],
+            changsheng: "Bath",
+            pillar_gods: ["Stern", "Beginning"],
+            one_year_luck: "37, 49, 61"
+          },
+          {
+            name: "Happy Palace (福德)",
+            stem_branch: "Ji-Wei",
+            stars: ["Tian Liang", "Hua Lu"],
+            decadal_range: "24–33",
+            main_stars: [{ name: "Blessing", status: "Radiant" }],
+            minor_stars: ["Hua Lu"],
+            changsheng: "Youth",
+            pillar_gods: ["Officer", "Academic"],
+            one_year_luck: "38, 50, 62"
+          },
+          {
+            name: "Property Palace (田宅)",
+            stem_branch: "Wu-Shen",
+            stars: ["Ju Men", "Di Jie"],
+            decadal_range: "34–43",
+            main_stars: [{ name: "Advocate", status: "Exhaust" }],
+            minor_stars: ["Exhaust"],
+            changsheng: "Arrive",
+            pillar_gods: ["Officer", "Academic"],
+            one_year_luck: "39, 51, 63"
+          },
+          {
+            name: "Career Palace (官祿)",
+            stem_branch: "Ding-You",
+            stars: ["Tan Lang", "Di Kong"],
+            decadal_range: "44–53",
+            main_stars: [{ name: "Flirt", status: "Radiant" }],
+            minor_stars: ["Void"],
+            changsheng: "Imperial",
+            pillar_gods: ["General", "Cavalry"],
+            one_year_luck: "40, 52, 64"
+          },
+          {
+            name: "Friends Palace (交友)",
+            stem_branch: "Bing-Xu",
+            stars: ["Tai Yin", "Tuo Luo"],
+            decadal_range: "54–63",
+            main_stars: [{ name: "Moon", status: "Exhaust" }],
+            minor_stars: ["Obstacle"],
+            changsheng: "Decay",
+            pillar_gods: ["General", "Cavalry"],
+            one_year_luck: "41, 53, 65"
+          },
+          {
+            name: "Travel Palace (遷移)",
+            stem_branch: "Yi-Hai",
+            stars: ["Tian Ji", "Qing Yang"],
+            decadal_range: "64–73",
+            main_stars: [{ name: "Advisor", status: "Radiant" }],
+            minor_stars: ["Sternness"],
+            changsheng: "Sickness",
+            pillar_gods: ["Scribe", "Doctor"],
+            one_year_luck: "42, 54, 66"
+          },
+          {
+            name: "Health Palace (疾厄)",
+            stem_branch: "Jia-Zi",
+            stars: ["Lian Zhen (Xian)", "Tian Yue"],
+            decadal_range: "74–83",
+            main_stars: [{ name: "Justice", status: "Exhaust" }],
+            minor_stars: ["Grace"],
+            changsheng: "Death",
+            pillar_gods: ["Scribe", "Doctor"],
+            one_year_luck: "31, 43, 55"
+          },
+          {
+            name: "Wealth Palace (財帛)",
+            stem_branch: "Gui-Chou",
+            stars: ["Tian Tong", "Lu Cun"],
+            decadal_range: "84–93",
+            main_stars: [{ name: "Mascot", status: "Radiant" }],
+            minor_stars: ["Wealth Star"],
+            changsheng: "Grave",
+            pillar_gods: ["Blacksmith", "Mason"],
+            one_year_luck: "32, 44, 56"
+          },
+          {
+            name: "Child Palace (子女)",
+            stem_branch: "Ren-Yin",
+            stars: ["Wu Qu", "Tian Kui"],
+            decadal_range: "94–103",
+            main_stars: [{ name: "Finance", status: "Radiant" }],
+            minor_stars: ["Status"],
+            changsheng: "Cut",
+            pillar_gods: ["Blacksmith", "Mason"],
+            one_year_luck: "33, 45, 57"
+          },
+          {
+            name: "Marriage Palace (夫妻)",
+            stem_branch: "Xin-Mao",
+            stars: ["Tai Yang", "Wen Qu", "Hua-Ji"],
+            decadal_range: "104–113",
+            main_stars: [{ name: "Sun", status: "Exhaust" }],
+            minor_stars: ["Arts", "Hua Ji"],
+            changsheng: "Tomb",
+            pillar_gods: ["Farmer", "Weaver"],
+            one_year_luck: "34, 46, 58"
+          },
+          {
+            name: "Siblings Palace (兄弟)",
+            stem_branch: "Geng-Chen",
+            stars: ["Tian Ji", "You Bi"],
+            decadal_range: "114–123",
+            main_stars: [{ name: "Advisor", status: "Radiant" }],
+            minor_stars: ["Right Assist"],
+            changsheng: "Exhaust",
+            pillar_gods: ["Farmer", "Weaver"],
+            one_year_luck: "35, 47, 59"
+          }
         ],
         yearly_stem_branch: "Bing-Wu",
         monthly_branch: "Wu-Shen",
@@ -379,6 +499,7 @@ export default function App() {
               initialReading={completion?.reading || ""}
               onSelectSession={executeAstrologySynthesis}
               isLLMLoading={isLLMLoading}
+              activeChartPayload={synthesis?.zwds_matrix}
             />
             
           </div>

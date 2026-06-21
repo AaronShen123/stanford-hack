@@ -10,6 +10,163 @@ interface ZWDSPalaceGridProps {
   targetVector: string;
 }
 
+interface PalaceDataPayload {
+  palaceName: string;
+  branchLabel: string;
+  decadalAgeRange: string;
+  mainStars?: { name: string; status?: string }[]; 
+  minorStars?: string[];   
+  changshengStage?: string; 
+  pillarGods?: string[];   
+  oneYearLuck?: string;    
+  hasHuaLu?: boolean;
+  hasHuaJi?: boolean;
+}
+
+const starTranslations: Record<string, string> = {
+  "Zi Wei": "Emperor",
+  "Tian Fu": "Heavenly Mansion",
+  "Zuo Fu": "Intellect",
+  "You Bi": "Right Assist",
+  "Tian Ji": "Advisor",
+  "Tai Yang": "Sun",
+  "Tai Yin": "Moon",
+  "Wu Qu": "Finance",
+  "Tian Tong": "Mascot",
+  "Lian Zhen": "Justice",
+  "Tan Lang": "Flirt",
+  "Ju Men": "Advocate",
+  "Tian Liang": "Blessing",
+  "Qi Sha": "Marshal",
+  "Po Jun": "Pioneer",
+  "Tian Xiang": "Minister",
+  "Wen Qu": "Arts",
+  "Wen Chang": "Academic",
+  "Lu Cun": "Wealth Star",
+  "Tian Kui": "Status",
+  "Tian Yue": "Grace",
+  "Qing Yang": "Sternness",
+  "Tuo Luo": "Obstacle",
+  "Di Kong": "Void",
+  "Di Jie": "Exhaust",
+  "Gu Chen": "Gu Chen",
+  "Tian Kong": "Tian Kong",
+  "Tian Wu": "Tian Wu",
+  "Hua Lu": "Hua Lu",
+  "Hua Ji": "Hua Ji",
+  "Hua Quan": "Hua Quan",
+  "Hua Ke": "Hua Ke"
+};
+
+const branchPalaceDetails: Record<string, { changshengStage: string; pillarGods: string[] }> = {
+  "Si": { changshengStage: "Birth", pillarGods: ["Stern", "Beginning"] },
+  "Wu": { changshengStage: "Bath", pillarGods: ["Stern", "Beginning"] },
+  "Wei": { changshengStage: "Youth", pillarGods: ["Officer", "Academic"] },
+  "Shen": { changshengStage: "Arrive", pillarGods: ["Officer", "Academic"] },
+  "You": { changshengStage: "Imperial", pillarGods: ["General", "Cavalry"] },
+  "Xu": { changshengStage: "Decay", pillarGods: ["General", "Cavalry"] },
+  "Hai": { changshengStage: "Sickness", pillarGods: ["Scribe", "Doctor"] },
+  "Zi": { changshengStage: "Death", pillarGods: ["Scribe", "Doctor"] },
+  "Chou": { changshengStage: "Grave", pillarGods: ["Blacksmith", "Mason"] },
+  "Yin": { changshengStage: "Cut", pillarGods: ["Blacksmith", "Mason"] },
+  "Mao": { changshengStage: "Tomb", pillarGods: ["Farmer", "Weaver"] },
+  "Chen": { changshengStage: "Exhaust", pillarGods: ["Farmer", "Weaver"] }
+};
+
+const branchToPalaceInfo: Record<string, { palaceName: string; decadalAgeRange: string }> = {
+  "Si": { palaceName: "Life Palace", decadalAgeRange: "4–13" },
+  "Wu": { palaceName: "Parents Palace", decadalAgeRange: "14–23" },
+  "Wei": { palaceName: "Happy Palace", decadalAgeRange: "24–33" },
+  "Shen": { palaceName: "Property Palace", decadalAgeRange: "34–43" },
+  "You": { palaceName: "Career Palace", decadalAgeRange: "44–53" },
+  "Xu": { palaceName: "Friends Palace", decadalAgeRange: "54–63" },
+  "Hai": { palaceName: "Travel Palace", decadalAgeRange: "64–73" },
+  "Zi": { palaceName: "Health Palace", decadalAgeRange: "74–83" },
+  "Chou": { palaceName: "Wealth Palace", decadalAgeRange: "84–93" },
+  "Yin": { palaceName: "Child Palace", decadalAgeRange: "94–103" },
+  "Mao": { palaceName: "Marriage Palace", decadalAgeRange: "104–113" },
+  "Chen": { palaceName: "Siblings Palace", decadalAgeRange: "114–123" }
+};
+
+const DynamicPalaceCell = ({ data }: { data: PalaceDataPayload }) => {
+  if (!data) return <div className="bg-white border border-stone-200 rounded-xl min-h-[175px]" />;
+
+  return (
+    <div className="relative flex flex-col justify-between p-2.5 h-full min-h-[175px] bg-white border border-stone-200 rounded-xl hover:border-stone-950 transition-all duration-150 shadow-sm">
+      
+      {/* Row 1: Palace Header & Fixed Coordinate Tag */}
+      <div className="flex justify-between items-start w-full border-b border-stone-100 pb-1">
+        <span className="text-[11px] font-black tracking-wider text-stone-900 uppercase font-sans">
+          {data.palaceName}
+        </span>
+        <span className="text-[10px] font-mono font-bold bg-stone-100 text-stone-500 px-1 rounded">
+          {data.branchLabel}
+        </span>
+      </div>
+
+      {/* Row 2: Main Stars & Dynamic Radiance Tokens */}
+      <div className="mt-1.5 flex flex-col gap-0.5">
+        {data.mainStars && data.mainStars.length > 0 ? (
+          data.mainStars.map((star, idx) => (
+            <div key={idx} className="flex items-baseline gap-1 text-xs font-extrabold text-stone-900 tracking-tight">
+              <span>{star.name}</span>
+              {star.status && (
+                <span className={`text-[9px] font-mono font-bold px-0.5 rounded ${
+                  star.status === 'Radiant' || star.status === 'Bright' || star.status === 'Shiny'
+                    ? 'text-amber-600 bg-amber-50' 
+                    : star.status === 'Xian' || star.status === 'Dark' || star.status === 'Ruinous' || star.status === 'Exhaust'
+                    ? 'text-rose-600 bg-rose-50'
+                    : 'text-stone-400 bg-stone-50'
+                }`}>
+                  ({star.status})
+                </span>
+              )}
+            </div>
+          ))
+        ) : (
+          <span className="text-xs text-stone-300 italic">No Major Stars</span>
+        )}
+      </div>
+
+      {/* Row 3: Minor Stars & Astral Badges Matrix */}
+      {data.minorStars && data.minorStars.length > 0 && (
+        <div className="mt-1.5 flex flex-wrap gap-x-1 gap-y-0.5 text-[9px] font-sans text-stone-500 leading-tight">
+          {data.minorStars.map((minor, idx) => (
+            <span key={idx} className="bg-stone-50/80 px-1 py-0.5 rounded border border-stone-100">
+              {minor}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Row 4: Chronological Cosmic Energy Stages */}
+      <div className="mt-2 pt-1 border-t border-stone-100/60 grid grid-cols-2 gap-1 text-[9px] font-mono text-stone-400">
+        <div>
+          Stage: <span className="text-stone-700 font-bold">{data.changshengStage || "N/A"}</span>
+        </div>
+        <div className="text-right truncate text-stone-500">
+          {data.pillarGods && data.pillarGods.length > 0 ? data.pillarGods.join(" · ") : "None"}
+        </div>
+      </div>
+
+      {/* Row 5: Decadal Bounds & 1-Year Luck Horizon Streams */}
+      <div className="flex flex-col gap-0.5 mt-2 pt-1 border-t border-stone-100 text-[9px] font-mono">
+        <div className="text-stone-500 font-bold">10Y Luck: {data.decadalAgeRange || "00-00"}</div>
+        <div className="text-stone-400 truncate">
+          1Y Luck: {data.oneYearLuck || "None"}
+        </div>
+      </div>
+
+      {/* Absolute Transformation Catalyst Layers */}
+      <div className="absolute bottom-11 right-2.5 flex gap-0.5">
+        {data.hasHuaLu && <span className="px-1 text-[8px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200 rounded shadow-sm">LU</span>}
+        {data.hasHuaJi && <span className="px-1 text-[8px] font-black bg-rose-50 text-rose-700 border border-rose-200 rounded shadow-sm">JI</span>}
+      </div>
+
+    </div>
+  );
+};
+
 export default function ZWDSPalaceGrid({
   matrix,
   birthDate,
@@ -41,65 +198,81 @@ export default function ZWDSPalaceGrid({
     const branch = palace.stem_branch.split("-")[1] || "";
     const coords = branchToGrid[branch] || { r: Math.floor(idx / 4) + 1, c: (idx % 4) + 1 };
     
-    // Parse stars
-    const mainStars: { name: string; status: string }[] = [];
-    const minorStars: string[] = [];
-    let auxiliaryCount = 0;
+    // Parse stars from backend or fallback to parsing from stars array
+    const mainStarsFromBackend = palace.main_stars?.map(s => ({ name: s.name, status: s.status || "" }));
+    const minorStarsFromBackend = palace.minor_stars;
+    const changshengFromBackend = palace.changsheng;
+    const pillarGodsFromBackend = palace.pillar_gods;
+    const oneYearLuckFromBackend = palace.one_year_luck;
+
+    let mainStars: { name: string; status: string }[] = [];
+    let minorStars: string[] = [];
+    let changshengStage = "";
+    let pillarGods: string[] = [];
+    let oneYearLuck = "";
     let hasHuaJi = false;
     let hasHuaLu = false;
 
-    const majorStarNames = [
-      "Zi Wei", "Tian Fu", "Wu Qu", "Tian Tong", "Lian Zhen", "Tian Ji", 
-      "Tai Yang", "Tai Yin", "Tan Lang", "Ju Men", "Tian Liang", "Qi Sha", 
-      "Po Jun", "Tian Xiang"
-    ];
+    if (mainStarsFromBackend && mainStarsFromBackend.length > 0) {
+      mainStars = mainStarsFromBackend;
+      minorStars = minorStarsFromBackend || [];
+      changshengStage = changshengFromBackend || "";
+      pillarGods = pillarGodsFromBackend || [];
+      oneYearLuck = oneYearLuckFromBackend || "";
+      hasHuaJi = (palace.stars || []).some(s => s.toLowerCase().includes("hua-ji") || s.toLowerCase().includes("hua ji") || s.toLowerCase().includes("化忌")) || minorStars.includes("Hua Ji") || minorStars.includes("Hua-Ji");
+      hasHuaLu = (palace.stars || []).some(s => s.toLowerCase().includes("hua-lu") || s.toLowerCase().includes("hua lu") || s.toLowerCase().includes("化祿") || s.toLowerCase().includes("化禄")) || minorStars.includes("Hua Lu") || minorStars.includes("Hua-Lu");
+    } else {
+      const majorStarNames = [
+        "Zi Wei", "Tian Fu", "Wu Qu", "Tian Tong", "Lian Zhen", "Tian Ji", 
+        "Tai Yang", "Tai Yin", "Tan Lang", "Ju Men", "Tian Liang", "Qi Sha", 
+        "Po Jun", "Tian Xiang", "Emperor", "Heavenly Mansion", "Finance",
+        "Mascot", "Justice", "Advisor", "Sun", "Moon", "Flirt", "Advocate",
+        "Blessing", "Marshal", "Pioneer", "Minister"
+      ];
 
-    (palace.stars || []).forEach(starStr => {
-      const lower = starStr.toLowerCase();
-      if (lower.includes("hua-ji") || lower.includes("hua ji") || lower.includes("化忌")) {
-        hasHuaJi = true;
-        return;
-      }
-      if (lower.includes("hua-lu") || lower.includes("hua lu") || lower.includes("化祿") || lower.includes("化禄")) {
-        hasHuaLu = true;
-        return;
-      }
-      
-      const match = starStr.match(/^([^(]+)(?:\(([^)]+)\))?/);
-      let name = starStr.trim();
-      let status = "";
-      if (match) {
-        name = match[1].trim();
-        status = match[2] ? match[2].trim() : "";
-      }
-      
-      const isMajor = majorStarNames.some(keyword => name.toLowerCase().includes(keyword.toLowerCase()));
-      if (isMajor) {
-        mainStars.push({ name, status });
-      } else {
-        auxiliaryCount++;
-        minorStars.push(starStr);
-      }
-    });
+      (palace.stars || []).forEach(starStr => {
+        const lower = starStr.toLowerCase();
+        if (lower.includes("hua-ji") || lower.includes("hua ji") || lower.includes("化忌")) {
+          hasHuaJi = true;
+          return;
+        }
+        if (lower.includes("hua-lu") || lower.includes("hua lu") || lower.includes("化祿") || lower.includes("化禄")) {
+          hasHuaLu = true;
+          return;
+        }
+        
+        const match = starStr.match(/^([^(]+)(?:\(([^)]+)\))?/);
+        let name = starStr.trim();
+        let status = "";
+        if (match) {
+          name = match[1].trim();
+          status = match[2] ? match[2].trim() : "";
+        }
+        
+        const translatedName = starTranslations[name] || name;
+        let mappedStatus = "";
+        if (status) {
+          if (status.toLowerCase() === "miao" || status.toLowerCase() === "radiant") {
+            mappedStatus = "Radiant";
+          } else if (status.toLowerCase() === "xian" || status.toLowerCase() === "exhaust") {
+            mappedStatus = "Exhaust";
+          } else {
+            mappedStatus = status;
+          }
+        }
 
-    const branchToAgeRange: Record<string, string> = {
-      "Si": "4–13",
-      "Wu": "14–23",
-      "Wei": "24–33",
-      "Shen": "34–43",
-      "You": "44–53",
-      "Xu": "54–63",
-      "Hai": "64–73",
-      "Zi": "74–83",
-      "Chou": "84–93",
-      "Yin": "94–103",
-      "Mao": "104–113",
-      "Chen": "114–123"
-    };
+        const isMajor = majorStarNames.some(keyword => name.toLowerCase().includes(keyword.toLowerCase()));
+        if (isMajor) {
+          mainStars.push({ name: translatedName, status: mappedStatus });
+        } else {
+          minorStars.push(translatedName);
+        }
+      });
 
-    const decadalAgeRange = branchToAgeRange[branch] || palace.decadal_range || "00-00";
+      const staticDetails = branchPalaceDetails[branch] || { changshengStage: "", pillarGods: [] };
+      changshengStage = staticDetails.changshengStage;
+      pillarGods = staticDetails.pillarGods;
 
-    const getOneYearLuck = (b: string): string => {
       const branchToYear: Record<string, string> = {
         "Si": "36, 48, 60",
         "Wu": "37, 49, 61",
@@ -114,9 +287,8 @@ export default function ZWDSPalaceGrid({
         "Mao": "34, 46, 58",
         "Chen": "35, 47, 59"
       };
-      return branchToYear[b] || "36";
-    };
-    const oneYearLuck = getOneYearLuck(branch);
+      oneYearLuck = branchToYear[branch] || "";
+    }
 
     return {
       palace,
@@ -125,8 +297,8 @@ export default function ZWDSPalaceGrid({
       hasHuaLu,
       branch,
       mainStars,
-      auxiliaryCount,
-      decadalAgeRange,
+      changshengStage,
+      pillarGods,
       oneYearLuck,
       minorStars
     };
@@ -140,16 +312,24 @@ export default function ZWDSPalaceGrid({
       </h2>
 
       {/* 4x4 Grid layout with custom border mappings */}
-      <div className="grid grid-cols-4 grid-rows-4 gap-2 w-full max-w-[680px] mx-auto">
+      <div className="grid grid-cols-4 grid-rows-4 gap-2 w-full max-w-[720px] mx-auto">
         
         {/* Render Palaces around the border */}
-        {gridCells.map(({ palace, coords, hasHuaJi, hasHuaLu, branch, mainStars, decadalAgeRange, oneYearLuck, minorStars }, idx) => {
-          let cardBgClasses = "bg-white border border-stone-200 hover:border-stone-900 shadow-sm";
-          if (hasHuaJi) cardBgClasses = "bg-rose-50/30 border border-rose-200 hover:border-rose-900 shadow-sm shadow-rose-50";
-          if (hasHuaLu) cardBgClasses = "bg-emerald-50/30 border border-emerald-200 hover:border-emerald-900 shadow-sm shadow-emerald-50";
-
-          const palaceName = palace.name.replace(" (Self)", "");
-          const branchLabel = branch;
+        {gridCells.map(({ palace, coords, hasHuaJi, hasHuaLu, branch, mainStars, changshengStage, pillarGods, oneYearLuck, minorStars }, idx) => {
+          const info = branchToPalaceInfo[branch] || { palaceName: palace.name, decadalAgeRange: palace.decadal_range || "00-00" };
+          
+          const cellData: PalaceDataPayload = {
+            palaceName: info.palaceName,
+            branchLabel: branch,
+            decadalAgeRange: info.decadalAgeRange,
+            mainStars: mainStars,
+            minorStars: minorStars,
+            changshengStage: changshengStage,
+            pillarGods: pillarGods,
+            oneYearLuck: oneYearLuck,
+            hasHuaLu: hasHuaLu,
+            hasHuaJi: hasHuaJi
+          };
 
           return (
             <div
@@ -158,51 +338,9 @@ export default function ZWDSPalaceGrid({
                 gridRowStart: coords.r,
                 gridColumnStart: coords.c,
               }}
-              className={`relative flex flex-col justify-between p-3 h-full min-h-[160px] rounded-xl transition-all select-none ${cardBgClasses}`}
+              className="h-full"
             >
-              {/* Header Grid */}
-              <div className="flex justify-between items-start w-full mb-1">
-                <span className="text-[11px] font-black text-stone-900 uppercase font-sans">{palaceName}</span>
-                <span className="text-[10px] font-mono font-bold bg-stone-100 text-stone-500 px-1 rounded">{branchLabel}</span>
-              </div>
-
-              {/* Primary Stars Row */}
-              <div className="flex flex-wrap gap-x-2 text-xs font-bold text-stone-850">
-                {mainStars.map((star, sIdx) => {
-                  let starColorClass = "text-stone-800";
-                  if (star.status === 'Xian') {
-                    starColorClass = "text-rose-600 font-bold";
-                  } else if (star.status === 'Miao') {
-                    starColorClass = "text-amber-600 font-bold";
-                  }
-                  return (
-                    <span key={sIdx} className={starColorClass}>
-                      {star.name}
-                      {star.status && (
-                        <span className="text-[10px] font-normal opacity-70 ml-0.5">
-                          ({star.status})
-                        </span>
-                      )}
-                    </span>
-                  );
-                })}
-              </div>
-
-              {/* THE RETAINED TEXT DATA SECTION (Muted & Grouped Neatly) */}
-              <div className="mt-2 pt-1 border-t border-stone-100 flex flex-col gap-0.5 text-[9px] font-mono text-stone-400 leading-tight">
-                <div>10Y Luck: <span className="text-stone-600 font-medium">{decadalAgeRange}</span></div>
-                {oneYearLuck && <div className="truncate">1Y Luck: <span className="text-stone-500">{oneYearLuck}</span></div>}
-                {minorStars && minorStars.length > 0 && <div className="text-stone-400 italic truncate" title={minorStars.join(", ")}>{minorStars.join(", ")}</div>}
-              </div>
-
-              {/* Bottom Badges Row */}
-              <div className="flex justify-between items-center w-full mt-2">
-                <span className="text-[9px] font-bold text-stone-300">CORE Payloads</span>
-                <div className="flex gap-1">
-                  {hasHuaLu && <span className="px-1 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[8px] font-black rounded">LU</span>}
-                  {hasHuaJi && <span className="px-1 bg-rose-50 text-rose-700 border border-rose-200 text-[8px] font-black rounded">JI</span>}
-                </div>
-              </div>
+              <DynamicPalaceCell data={cellData} />
             </div>
           );
         })}

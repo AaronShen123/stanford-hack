@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import type { ChatMessage, AstrologyRequest } from "../types";
+import type { ChatMessage, AstrologyRequest, ZWDSMatrix } from "../types";
 import { loadChatHistory, saveChatHistory, getAllSessions } from "../utils/storage";
 import { MessageSquare, Send, History, Sparkles, User, Database, ArrowRight } from "lucide-react";
 
@@ -119,44 +119,63 @@ interface ClientChatProps {
   initialReading: string;
   onSelectSession: (payload: AstrologyRequest) => void;
   isLLMLoading?: boolean;
+  activeChartPayload?: ZWDSMatrix;
 }
 
 export default function ClientChat({
   storageKey,
   initialReading: _initialReading,
   onSelectSession,
-  isLLMLoading = false
+  isLLMLoading = false,
+  activeChartPayload
 }: ClientChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [sessions, setSessions] = useState<any[]>([]);
   const [showHistoryPanel, setShowHistoryPanel] = useState(false);
+  const [quickActionTabs, setQuickActionTabs] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // Load chat history whenever the active storage key or initial reading changes
+  const isGenerated = !!storageKey;
+
+  // Load chat history and trigger proactive retrieval when active chart loads
   useEffect(() => {
-    if (!storageKey) return;
-    const history = loadChatHistory(storageKey);
-    
-    if (history.length === 0) {
-      // Seed with proactive greeting message
-      const greetingText = `System localized. I have successfully parsed your Life Palace (Si) with Zi Wei and Tian Fu, as well as the active Hua-Ji trigger in your Spouse palace. Based on your current 10-Year Luck parameters, here are the optimal audit vectors to explore. Click one to initialize the downstream inference pipeline:`;
-      const welcomeMessage: ChatMessage = {
-        id: "initial_reading",
-        sender: "ai",
-        text: greetingText,
-        timestamp: new Date().toLocaleTimeString()
-      };
-      const initialHistory = [welcomeMessage];
-      setMessages(initialHistory);
-      saveChatHistory(storageKey, initialHistory);
-    } else {
-      setMessages(history);
+    if (isGenerated && activeChartPayload) {
+      const history = loadChatHistory(storageKey);
+      
+      if (history.length === 0) {
+        const palaces = activeChartPayload?.palaces || [];
+        const siPalace = palaces.find(p => p.stem_branch.split("-")[1] === "Si");
+        const activeLifePalaceStars = siPalace?.main_stars?.map(s => `${s.name}${s.status ? `(${s.status})` : ""}`).join(", ") || "None";
+        
+        const greetingText = `System matrix localized. I have successfully traced the dynamic parameters for this profile. The Life Palace in Si holds [${activeLifePalaceStars}] alongside its underlying temporal age ranges and 1Y Luck streams. Click an analytical vector below to initiate deep downstream inference:`;
+        
+        const contextPrompt: ChatMessage = {
+          id: "initial_reading",
+          sender: "ai",
+          timestamp: new Date().toLocaleTimeString(),
+          text: greetingText
+        };
+        
+        const initialHistory = [contextPrompt];
+        setMessages(initialHistory);
+        saveChatHistory(storageKey, initialHistory);
+      } else {
+        setMessages(history);
+      }
+      
+      setQuickActionTabs([
+        "📊 Evaluate Systemic Friction vs Current 10Y Luck Window",
+        "💰 Audit Capital Accumulation Capacity (Main Stars Vector)",
+        "🔍 Track Catalyst Shifts (Active LU / JI Badge Triggers)"
+      ]);
+      setShowSuggestions(true);
+      
+      // Refresh sessions list
+      setSessions(getAllSessions());
     }
-    
-    // Refresh sessions list
-    setSessions(getAllSessions());
-  }, [storageKey]);
+  }, [isGenerated, activeChartPayload, storageKey]);
 
   // Auto scroll to latest message
   useEffect(() => {
@@ -180,12 +199,12 @@ export default function ClientChat({
     // Simulate AI response based on the prompt clicked
     setTimeout(() => {
       let responseText = "";
-      if (promptText.includes("Friction")) {
+      if (promptText.includes("Friction") || promptText.includes("friction")) {
         responseText = "**Decadal Friction Index Audit**:\n- Current continuous friction sits at 2.21.\n- Primary friction points stem from Ascendant square Midheaven and Sun square Ascendant.\n- Mitigation path: Decouple operational details from long-term authority objectives to resolve ASC-MC tension.";
-      } else if (promptText.includes("Wealth")) {
+      } else if (promptText.includes("Wealth") || promptText.includes("Capital") || promptText.includes("Wu Qu")) {
         responseText = "**Wealth Flow Constraint Audit**:\n- Wu Qu is positioned in the Children palace (Yin) with Tian Kui, directing capital allocation toward early-stage ventures and family trust structures.\n- Lu Cun is in the Wealth palace (Chou), signifying steady accumulation but highlighting a constraint: lack of rapid capital rotation.\n- Recommendation: Avoid short-term high-leverage speculation; focus on long-term compound growth.";
-      } else if (promptText.includes("Hua-Ji")) {
-        responseText = "**Hua-Ji Risk Analysis**:\n- Active Hua-Ji is located in the Spouse palace (Mao), indicating structural vulnerability and relational friction.\n- Relational volatility decays over time but demands rigorous communication protocols and structured boundary agreements.\n- Mitigation: Preemptively run conflict-resolution cycles and audit partnership agreements.";
+      } else if (promptText.includes("Hua-Ji") || promptText.includes("Catalyst") || promptText.includes("LU / JI")) {
+        responseText = "**Hua-Ji / Catalyst Shifts Analysis**:\n- Active Hua-Ji is located in the Spouse palace (Mao), indicating structural vulnerability and relational friction.\n- Relational volatility decays over time but demands rigorous communication protocols and structured boundary agreements.\n- Mitigation: Preemptively run conflict-resolution cycles and audit partnership agreements.";
       } else {
         responseText = `[Inference Resolved] Parsed search query: "${promptText}". The downstream inference engine recommends focusing on the active catalyst triggers in Mao (Spouse) and Si (Ming) palaces to optimize somatic and relational vitality.`;
       }
@@ -270,6 +289,24 @@ export default function ClientChat({
         </div>
       </div>
 
+      {/* QuickActionTabs */}
+      {showSuggestions && quickActionTabs.length > 0 && (
+        <div className="p-3 bg-stone-50/50 border-b border-stone-150 flex flex-col gap-1.5 shrink-0 select-none animate-fadeIn">
+          <span className="text-[9px] font-bold text-stone-400 uppercase tracking-wider">Quick Action Deductions</span>
+          <div className="flex flex-col gap-1">
+            {quickActionTabs.map((tab, idx) => (
+              <button
+                key={idx}
+                onClick={() => triggerSuggestedPrompt(tab)}
+                className="w-full text-left px-2.5 py-1.5 bg-white hover:bg-stone-50 border border-stone-250 hover:border-stone-400 text-[10.5px] font-bold text-stone-700 rounded-lg transition active:scale-[0.99] cursor-pointer flex items-center gap-1"
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-stone-50/30">
         {messages.length === 0 && !isLLMLoading ? (
@@ -314,27 +351,16 @@ export default function ClientChat({
 
                     {msg.id === "initial_reading" && (
                       <div className="mt-2.5 flex flex-col gap-1.5 w-full">
-                        <button
-                          type="button"
-                          onClick={() => triggerSuggestedPrompt("📊 Analyze Current Decadal Friction Index")}
-                          className="w-full text-left px-3 py-2 bg-stone-50 hover:bg-stone-100 border border-stone-200 hover:border-stone-300 text-[11px] font-semibold text-stone-700 rounded-lg transition active:scale-[0.99] cursor-pointer flex items-center gap-1.5"
-                        >
-                          <span>📊</span> Analyze Current Decadal Friction Index
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => triggerSuggestedPrompt("💰 Audit Wealth Flow Constraints (Wu Qu Focus)")}
-                          className="w-full text-left px-3 py-2 bg-stone-50 hover:bg-stone-100 border border-stone-200 hover:border-stone-300 text-[11px] font-semibold text-stone-700 rounded-lg transition active:scale-[0.99] cursor-pointer flex items-center gap-1.5"
-                        >
-                          <span>💰</span> Audit Wealth Flow Constraints (Wu Qu Focus)
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => triggerSuggestedPrompt("🔍 Decode Active Hua-Ji Risks in Marriage Palace")}
-                          className="w-full text-left px-3 py-2 bg-stone-50 hover:bg-stone-100 border border-stone-200 hover:border-stone-300 text-[11px] font-semibold text-stone-700 rounded-lg transition active:scale-[0.99] cursor-pointer flex items-center gap-1.5"
-                        >
-                          <span>🔍</span> Decode Active Hua-Ji Risks in Marriage Palace
-                        </button>
+                        {quickActionTabs.map((tab, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => triggerSuggestedPrompt(tab)}
+                            className="w-full text-left px-3 py-2 bg-stone-50 hover:bg-stone-100 border border-stone-200 hover:border-stone-300 text-[11px] font-semibold text-stone-700 rounded-lg transition active:scale-[0.99] cursor-pointer flex items-center gap-1.5"
+                          >
+                            {tab}
+                          </button>
+                        ))}
                       </div>
                     )}
 

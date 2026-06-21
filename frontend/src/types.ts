@@ -40,6 +40,11 @@ export interface ZWDSPalace {
   stem_branch: string;
   stars: string[];
   decadal_range?: string;
+  main_stars?: { name: string; status?: string }[];
+  minor_stars?: string[];
+  changsheng?: string;
+  pillar_gods?: string[];
+  one_year_luck?: string;
 }
 
 export interface ZWDSMatrix {

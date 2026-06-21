@@ -71,11 +71,20 @@ class WesternMatrix(BaseModel):
     houses: Dict[int, float] = Field(..., description="Cusp degrees for houses 1 to 12")
 
 
+class MainStarModel(BaseModel):
+    name: str
+    status: Optional[str] = ""
+
 class ZWDSPalace(BaseModel):
     name: str = Field(..., description="Palace name (e.g. Ming, Wealth, Career)")
     stem_branch: str = Field(..., description="Heavenly Stem and Earthly Branch combination")
     stars: List[str] = Field(default_factory=list, description="List of major and minor stars residing in this palace")
     decadal_range: Optional[str] = Field(None, description="Decadal age range (e.g. 26-35)")
+    main_stars: List[MainStarModel] = Field(default_factory=list, description="List of main stars and status")
+    minor_stars: List[str] = Field(default_factory=list, description="List of minor stars")
+    changsheng: str = Field("", description="Cosmic vitality stage")
+    pillar_gods: List[str] = Field(default_factory=list, description="Pillar gods descriptors")
+    one_year_luck: str = Field("", description="One year luck bounds")
 
 
 class ZWDSMatrix(BaseModel):
