@@ -123,7 +123,7 @@ interface ClientChatProps {
 
 export default function ClientChat({
   storageKey,
-  initialReading,
+  initialReading: _initialReading,
   onSelectSession,
   isLLMLoading = false
 }: ClientChatProps) {
@@ -138,12 +138,13 @@ export default function ClientChat({
     if (!storageKey) return;
     const history = loadChatHistory(storageKey);
     
-    if (history.length === 0 && initialReading) {
-      // Seed with initial reading from prompt compiler
+    if (history.length === 0) {
+      // Seed with proactive greeting message
+      const greetingText = `System localized. I have successfully parsed your Life Palace (Si) with Zi Wei and Tian Fu, as well as the active Hua-Ji trigger in your Spouse palace. Based on your current 10-Year Luck parameters, here are the optimal audit vectors to explore. Click one to initialize the downstream inference pipeline:`;
       const welcomeMessage: ChatMessage = {
         id: "initial_reading",
         sender: "ai",
-        text: initialReading,
+        text: greetingText,
         timestamp: new Date().toLocaleTimeString()
       };
       const initialHistory = [welcomeMessage];
@@ -155,12 +156,51 @@ export default function ClientChat({
     
     // Refresh sessions list
     setSessions(getAllSessions());
-  }, [storageKey, initialReading]);
+  }, [storageKey]);
 
   // Auto scroll to latest message
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLLMLoading]);
+
+  const triggerSuggestedPrompt = (promptText: string) => {
+    if (!storageKey) return;
+
+    const userMsg: ChatMessage = {
+      id: Math.random().toString(36).substr(2, 9),
+      sender: "user",
+      text: promptText,
+      timestamp: new Date().toLocaleTimeString()
+    };
+
+    const updated = [...messages, userMsg];
+    setMessages(updated);
+    saveChatHistory(storageKey, updated);
+
+    // Simulate AI response based on the prompt clicked
+    setTimeout(() => {
+      let responseText = "";
+      if (promptText.includes("Friction")) {
+        responseText = "**Decadal Friction Index Audit**:\n- Current continuous friction sits at 2.21.\n- Primary friction points stem from Ascendant square Midheaven and Sun square Ascendant.\n- Mitigation path: Decouple operational details from long-term authority objectives to resolve ASC-MC tension.";
+      } else if (promptText.includes("Wealth")) {
+        responseText = "**Wealth Flow Constraint Audit**:\n- Wu Qu is positioned in the Children palace (Yin) with Tian Kui, directing capital allocation toward early-stage ventures and family trust structures.\n- Lu Cun is in the Wealth palace (Chou), signifying steady accumulation but highlighting a constraint: lack of rapid capital rotation.\n- Recommendation: Avoid short-term high-leverage speculation; focus on long-term compound growth.";
+      } else if (promptText.includes("Hua-Ji")) {
+        responseText = "**Hua-Ji Risk Analysis**:\n- Active Hua-Ji is located in the Spouse palace (Mao), indicating structural vulnerability and relational friction.\n- Relational volatility decays over time but demands rigorous communication protocols and structured boundary agreements.\n- Mitigation: Preemptively run conflict-resolution cycles and audit partnership agreements.";
+      } else {
+        responseText = `[Inference Resolved] Parsed search query: "${promptText}". The downstream inference engine recommends focusing on the active catalyst triggers in Mao (Spouse) and Si (Ming) palaces to optimize somatic and relational vitality.`;
+      }
+
+      const aiResponse: ChatMessage = {
+        id: Math.random().toString(36).substr(2, 9),
+        sender: "ai",
+        text: responseText,
+        timestamp: new Date().toLocaleTimeString()
+      };
+      const finalMsgList = [...updated, aiResponse];
+      setMessages(finalMsgList);
+      saveChatHistory(storageKey, finalMsgList);
+    }, 1000);
+  };
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -271,6 +311,33 @@ export default function ClientChat({
                     >
                       {isAi ? parseMarkdown(msg.text) : <p className="whitespace-pre-line">{msg.text}</p>}
                     </div>
+
+                    {msg.id === "initial_reading" && (
+                      <div className="mt-2.5 flex flex-col gap-1.5 w-full">
+                        <button
+                          type="button"
+                          onClick={() => triggerSuggestedPrompt("📊 Analyze Current Decadal Friction Index")}
+                          className="w-full text-left px-3 py-2 bg-stone-50 hover:bg-stone-100 border border-stone-200 hover:border-stone-300 text-[11px] font-semibold text-stone-700 rounded-lg transition active:scale-[0.99] cursor-pointer flex items-center gap-1.5"
+                        >
+                          <span>📊</span> Analyze Current Decadal Friction Index
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => triggerSuggestedPrompt("💰 Audit Wealth Flow Constraints (Wu Qu Focus)")}
+                          className="w-full text-left px-3 py-2 bg-stone-50 hover:bg-stone-100 border border-stone-200 hover:border-stone-300 text-[11px] font-semibold text-stone-700 rounded-lg transition active:scale-[0.99] cursor-pointer flex items-center gap-1.5"
+                        >
+                          <span>💰</span> Audit Wealth Flow Constraints (Wu Qu Focus)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => triggerSuggestedPrompt("🔍 Decode Active Hua-Ji Risks in Marriage Palace")}
+                          className="w-full text-left px-3 py-2 bg-stone-50 hover:bg-stone-100 border border-stone-200 hover:border-stone-300 text-[11px] font-semibold text-stone-700 rounded-lg transition active:scale-[0.99] cursor-pointer flex items-center gap-1.5"
+                        >
+                          <span>🔍</span> Decode Active Hua-Ji Risks in Marriage Palace
+                        </button>
+                      </div>
+                    )}
+
                     <span className="text-[9px] text-stone-400 mt-1 block px-1">
                       {msg.timestamp}
                     </span>

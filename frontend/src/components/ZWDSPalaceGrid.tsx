@@ -43,6 +43,7 @@ export default function ZWDSPalaceGrid({
     
     // Parse stars
     const mainStars: { name: string; status: string }[] = [];
+    const minorStars: string[] = [];
     let auxiliaryCount = 0;
     let hasHuaJi = false;
     let hasHuaLu = false;
@@ -77,6 +78,7 @@ export default function ZWDSPalaceGrid({
         mainStars.push({ name, status });
       } else {
         auxiliaryCount++;
+        minorStars.push(starStr);
       }
     });
 
@@ -97,6 +99,25 @@ export default function ZWDSPalaceGrid({
 
     const decadalAgeRange = branchToAgeRange[branch] || palace.decadal_range || "00-00";
 
+    const getOneYearLuck = (b: string): string => {
+      const branchToYear: Record<string, string> = {
+        "Si": "36, 48, 60",
+        "Wu": "37, 49, 61",
+        "Wei": "38, 50, 62",
+        "Shen": "39, 51, 63",
+        "You": "40, 52, 64",
+        "Xu": "41, 53, 65",
+        "Hai": "42, 54, 66",
+        "Zi": "31, 43, 55",
+        "Chou": "32, 44, 56",
+        "Yin": "33, 45, 57",
+        "Mao": "34, 46, 58",
+        "Chen": "35, 47, 59"
+      };
+      return branchToYear[b] || "36";
+    };
+    const oneYearLuck = getOneYearLuck(branch);
+
     return {
       palace,
       coords,
@@ -105,7 +126,9 @@ export default function ZWDSPalaceGrid({
       branch,
       mainStars,
       auxiliaryCount,
-      decadalAgeRange
+      decadalAgeRange,
+      oneYearLuck,
+      minorStars
     };
   });
 
@@ -117,13 +140,13 @@ export default function ZWDSPalaceGrid({
       </h2>
 
       {/* 4x4 Grid layout with custom border mappings */}
-      <div className="grid grid-cols-4 grid-rows-4 gap-2 h-full aspect-square max-w-[480px] mx-auto w-full">
+      <div className="grid grid-cols-4 grid-rows-4 gap-2 w-full max-w-[680px] mx-auto">
         
         {/* Render Palaces around the border */}
-        {gridCells.map(({ palace, coords, hasHuaJi, hasHuaLu, branch, mainStars, auxiliaryCount, decadalAgeRange }, idx) => {
-          let cardBgClasses = "bg-stone-50/40 border-stone-200/60 hover:border-stone-400";
-          if (hasHuaJi) cardBgClasses = "bg-rose-50/30 border-rose-200/60 hover:border-rose-300 shadow-sm shadow-rose-50";
-          if (hasHuaLu) cardBgClasses = "bg-emerald-50/30 border-emerald-200/60 hover:border-emerald-300 shadow-sm shadow-emerald-50";
+        {gridCells.map(({ palace, coords, hasHuaJi, hasHuaLu, branch, mainStars, decadalAgeRange, oneYearLuck, minorStars }, idx) => {
+          let cardBgClasses = "bg-white border border-stone-200 hover:border-stone-900 shadow-sm";
+          if (hasHuaJi) cardBgClasses = "bg-rose-50/30 border border-rose-200 hover:border-rose-900 shadow-sm shadow-rose-50";
+          if (hasHuaLu) cardBgClasses = "bg-emerald-50/30 border border-emerald-200 hover:border-emerald-900 shadow-sm shadow-emerald-50";
 
           const palaceName = palace.name.replace(" (Self)", "");
           const branchLabel = branch;
@@ -135,54 +158,50 @@ export default function ZWDSPalaceGrid({
                 gridRowStart: coords.r,
                 gridColumnStart: coords.c,
               }}
-              className={`relative flex flex-col justify-between p-3 min-h-[110px] rounded-lg transition-colors select-none ${cardBgClasses}`}
+              className={`relative flex flex-col justify-between p-3 h-full min-h-[160px] rounded-xl transition-all select-none ${cardBgClasses}`}
             >
-              {/* Top Header Row of the Cell */}
-              <div className="flex justify-between items-start w-full">
-                <div>
-                  <span className="text-xs font-bold text-stone-400 uppercase tracking-wider">{palaceName}</span>
-                  {/* Main Stars Column Stacking */}
-                  <div className="mt-1 flex flex-col gap-0.5">
-                    {mainStars.map((star, sIdx) => {
-                      let starColorClass = "text-stone-800";
-                      if (star.status === 'Xian') {
-                        starColorClass = "text-rose-600 font-bold";
-                      } else if (star.status === 'Miao') {
-                        starColorClass = "text-amber-600 font-bold";
-                      }
-                      return (
-                        <span key={sIdx} className={`text-xs font-semibold ${starColorClass}`}>
-                          {star.name}
-                          {star.status && (
-                            <span className="text-[10px] font-normal opacity-70 ml-0.5">
-                              ({star.status})
-                            </span>
-                          )}
-                        </span>
-                      );
-                    })}
-                  </div>
-                </div>
-                {/* Top Right: Catalyst Badge or Fixed Branch Tag */}
-                <div className="flex flex-col items-end gap-1 shrink-0">
-                  <span className="text-[10px] font-bold px-1 bg-stone-200/60 text-stone-600 rounded font-mono">{branchLabel}</span>
-                  {hasHuaJi && (
-                    <span className="px-1.5 py-0.5 bg-rose-100 text-rose-700 text-[9px] font-extrabold rounded border border-rose-200 uppercase tracking-tighter">
-                      JI
-                    </span>
-                  )}
-                  {hasHuaLu && (
-                    <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-[9px] font-extrabold rounded border border-emerald-200 uppercase tracking-tighter">
-                      LU
-                    </span>
-                  )}
-                </div>
+              {/* Header Grid */}
+              <div className="flex justify-between items-start w-full mb-1">
+                <span className="text-[11px] font-black text-stone-900 uppercase font-sans">{palaceName}</span>
+                <span className="text-[10px] font-mono font-bold bg-stone-100 text-stone-500 px-1 rounded">{branchLabel}</span>
               </div>
 
-              {/* Bottom Metadata Row of the Cell */}
-              <div className="flex justify-between items-end w-full border-t border-stone-100/80 pt-1 mt-1">
-                <span className="text-[10px] font-mono text-stone-400 font-medium">{decadalAgeRange || "00-00"}</span>
-                <span className="text-[9px] text-stone-400 italic font-medium">{auxiliaryCount} Aux</span>
+              {/* Primary Stars Row */}
+              <div className="flex flex-wrap gap-x-2 text-xs font-bold text-stone-850">
+                {mainStars.map((star, sIdx) => {
+                  let starColorClass = "text-stone-800";
+                  if (star.status === 'Xian') {
+                    starColorClass = "text-rose-600 font-bold";
+                  } else if (star.status === 'Miao') {
+                    starColorClass = "text-amber-600 font-bold";
+                  }
+                  return (
+                    <span key={sIdx} className={starColorClass}>
+                      {star.name}
+                      {star.status && (
+                        <span className="text-[10px] font-normal opacity-70 ml-0.5">
+                          ({star.status})
+                        </span>
+                      )}
+                    </span>
+                  );
+                })}
+              </div>
+
+              {/* THE RETAINED TEXT DATA SECTION (Muted & Grouped Neatly) */}
+              <div className="mt-2 pt-1 border-t border-stone-100 flex flex-col gap-0.5 text-[9px] font-mono text-stone-400 leading-tight">
+                <div>10Y Luck: <span className="text-stone-600 font-medium">{decadalAgeRange}</span></div>
+                {oneYearLuck && <div className="truncate">1Y Luck: <span className="text-stone-500">{oneYearLuck}</span></div>}
+                {minorStars && minorStars.length > 0 && <div className="text-stone-400 italic truncate" title={minorStars.join(", ")}>{minorStars.join(", ")}</div>}
+              </div>
+
+              {/* Bottom Badges Row */}
+              <div className="flex justify-between items-center w-full mt-2">
+                <span className="text-[9px] font-bold text-stone-300">CORE Payloads</span>
+                <div className="flex gap-1">
+                  {hasHuaLu && <span className="px-1 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[8px] font-black rounded">LU</span>}
+                  {hasHuaJi && <span className="px-1 bg-rose-50 text-rose-700 border border-rose-200 text-[8px] font-black rounded">JI</span>}
+                </div>
               </div>
             </div>
           );
