@@ -15,13 +15,13 @@ const MOCK_GOD_MODE_RESPONSE: Record<string, any> = {
   wealth: {
     synthesis: {
       birth_time_metrics: {
-        local_datetime: "1990-05-15T12:00:00",
-        utc_datetime: "1990-05-15T20:00:00",
-        lmt_datetime: "1990-05-15T11:50:19.344000",
-        tlt_datetime: "1990-05-15T11:54:01.460902",
+        local_datetime: "2000-10-16T12:00:00",
+        utc_datetime: "2000-10-16T20:00:00",
+        lmt_datetime: "2000-10-16T11:50:19.344000",
+        tlt_datetime: "2000-10-16T11:54:01.460902",
         timezone_offset: -8.0,
-        jd_ut: 2448027.3333333335,
-        jd_et: 2448027.3339942857,
+        jd_ut: 2451834.3333333335,
+        jd_et: 2451834.3339942857,
         eot_seconds: 222.1169018935825,
         branch_boundary_anomaly: false
       },
@@ -184,16 +184,15 @@ const MOCK_GOD_MODE_RESPONSE: Record<string, any> = {
             one_year_luck: "35, 47, 59"
           }
         ],
-        yearly_stem_branch: "Bing-Wu",
-        monthly_branch: "Wu-Shen",
-        lunar_date_str: "Year 2026, Month 5, Day 7, Hour Wu (Local Bypass)"
+        yearly_stem_branch: "Geng-Chen",
+        monthly_branch: "Bing-Xu",
+        lunar_date_str: "Year Geng-Chen (2000), Month 9, Day 19 (Local Bypass)"
       },
       synthesis_flags: {
-        friction_index: 2.21,
+        friction_index: 1.34,
         friction_points: [
-          "Sun square Ascendant (orb 3.53°)",
-          "Ascendant square Midheaven (orb 4.99°)",
-          "Midheaven opposition Pluto (orb 7.10°)"
+          "Moon opposition Saturn (orb 2.14°)",
+          "Ascendant square Midheaven (orb 3.50°)"
         ],
         aspects: [
           { planet1: "Sun", planet2: "Moon", aspect_type: "trine", degree_difference: 113.42, orb: 6.57 },
@@ -215,33 +214,41 @@ const MOCK_GOD_MODE_RESPONSE: Record<string, any> = {
     compiled_prompt: "God-Mode Offline Synthesis",
     reading: `# [God-Mode Bypass Active] Synthesis Reading
 
-**Native Profile:** 1990-05-15 | Sun 24°43' Taurus | ASC 28°15' Virgo | MC 23°15' Taurus
+**Native Profile:** 2000-10-16 | Sun Libra | Geng-Chen Year | Current Age: 25
 **Demo Status:** Offline Simulation Mode (CalHacks Wi-Fi Dropouts Insulated)
 
 ---
 
 ## 1. Primary Alignment Dynamics
 
-- **Deterministic Axis:** **Sun conjunct Midheaven (orb 1.45°)** trine **Saturn (orb 0.52°)**. Earning capacity and professional authority are bound to long-horizon, disciplined growth.
-- **ZWDS Prosperity Anchor:** **Lu Cun (禄存)** in the **Wealth Palace** guarantees a resilient baseline flow.
+- **Deterministic Axis:** **Ascendant square Midheaven** cross-mapped with the **Career Palace (You)**. Professional focus is centered on high-scale analytical architectures (Data Science and engineering trajectory).
+- **ZWDS Prosperity Anchor:** **Lu Cun (禄存)** in the **Wealth Palace (Chou)** guarantees a resilient baseline flow.
 
 ---
 
-## 2. Potential Vulnerabilities & Frictions
+## 2. Potential Vulnerabilities & Frictions (Cross-System Resonance)
 
 | Palace / Axis | Aspect / Catalyst | Core Impact | Risk Rating |
 |---|---|---|---|
-| **Career (官禄)** | Tan Lang + Di Kong | speculative drain | Moderate |
-| **Property (田宅)** | Ju Men + Di Jie | contractual conflict | High |
-| **Spouse (夫妻)** | Tai Yang + Hua-Ji | partner entanglement | Moderate |
+| **Career Palace (官祿) [You]** | Tan Lang + Di Kong | speculative drain | Moderate |
+| **Wealth Palace (財帛) [Chou]** | Tian Tong + Lu Cun | accumulation bottleneck | Low |
+| **Spouse Palace (夫妻) [Mao]** | Tai Yang + Hua-Ji | relational friction | High |
 
 ---
 
-## 3. Recommended Actions
+## 3. Cross-System Translation Framework (The Dual-Matrix Resonance)
 
-1. Avoid short-term high-leverage speculation.
-2. Focus on institutional, salary/equity-based growth channels.
-3. Manage the ASC-MC square tension by decoupling detail execution (Virgo ASC) from macro authority (Taurus MC).
+The synthesis model resolves the dual-matrix translation by mapping Western aspect vectors as operational modifiers over ZWDS palace structures:
+- The **Ascendant-Midheaven square** acts as a structural catalyst, translating personal execution stress into Career Palace (You) speculation blocks.
+- The **Spouse Palace (Mao) Hua-Ji** resonance maps to relational boundaries, indicating that personal/professional tension points should be managed through explicit, decoupled boundaries.
+
+---
+
+## 4. Recommended Actions
+
+1. Align Data Science and engineering trajectory with institutional, equity-based growth channels.
+2. Avoid short-term high-leverage speculation (neutralizing the Tan Lang + Di Kong void block in You).
+3. Preemptively run conflict-resolution cycles to safeguard the Spouse Palace (Mao) Hua-Ji risk vector.
 `
   }
 };

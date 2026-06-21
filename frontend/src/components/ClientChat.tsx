@@ -200,13 +200,23 @@ export default function ClientChat({
     setTimeout(() => {
       let responseText = "";
       if (promptText.includes("Friction") || promptText.includes("friction")) {
-        responseText = "**Decadal Friction Index Audit**:\n- Current continuous friction sits at 2.21.\n- Primary friction points stem from Ascendant square Midheaven and Sun square Ascendant.\n- Mitigation path: Decouple operational details from long-term authority objectives to resolve ASC-MC tension.";
+        responseText = "**Systemic Friction & Luck Window Audit**:\n" +
+          "- **True Profile:** DOB 2000-10-16 (Geng-Chen Year) | Active Age: 25.\n" +
+          "- **Friction Index:** Calibrated at 1.34.\n" +
+          "- **Decadal Window:** Current 10Y Luck window (24–33 Happy Palace) transitions your professional focus. The Ascendant square Midheaven aspect acts as an operational modifier, resonating stress vectors directly into your Career Palace (You).\n" +
+          "- **Mitigation:** Decouple execution details from long-term trajectory targets to absorb stress and stabilize your analytical/Data Science engineering path.";
       } else if (promptText.includes("Wealth") || promptText.includes("Capital") || promptText.includes("Wu Qu")) {
-        responseText = "**Wealth Flow Constraint Audit**:\n- Wu Qu is positioned in the Children palace (Yin) with Tian Kui, directing capital allocation toward early-stage ventures and family trust structures.\n- Lu Cun is in the Wealth palace (Chou), signifying steady accumulation but highlighting a constraint: lack of rapid capital rotation.\n- Recommendation: Avoid short-term high-leverage speculation; focus on long-term compound growth.";
+        responseText = "**Wealth & Career Axis Audit**:\n" +
+          "- **Palace Anchors:** The Wealth Palace is anchored at Chou (Mascot / Radiant / Wealth Star / Grave), holding Lu Cun. Career Palace is at You (Flirt / Radiant / Void).\n" +
+          "- **Accumulation Vectors:** Lu Cun in Chou provides a resilient compound growth baseline. However, Career Palace (You) contains a speculative drain catalyst (Tan Lang + Di Kong).\n" +
+          "- **Strategic recommendation:** Avoid short-term high-leverage speculation. Direct capital towards long-term assets and engineering/Data Science career equity.";
       } else if (promptText.includes("Hua-Ji") || promptText.includes("Catalyst") || promptText.includes("LU / JI")) {
-        responseText = "**Hua-Ji / Catalyst Shifts Analysis**:\n- Active Hua-Ji is located in the Spouse palace (Mao), indicating structural vulnerability and relational friction.\n- Relational volatility decays over time but demands rigorous communication protocols and structured boundary agreements.\n- Mitigation: Preemptively run conflict-resolution cycles and audit partnership agreements.";
+        responseText = "**Catalyst Shifts (LU / JI) & Cross-System Resonance**:\n" +
+          "- **Active Badges:** Spouse Palace (Mao) holds active **Hua-Ji** (JI) with Tai Yang, and Happy Palace (Wei) holds **Hua-Lu** (LU).\n" +
+          "- **Cross-System Translation:** The Spouse Palace Hua-Ji operates in resonance with Western relational aspects. This creates structural boundary friction, requiring strict boundary partitioning between engineering career objectives and relational spheres.\n" +
+          "- **Mitigation:** Run periodic conflict-resolution cycles and decouple operational details from emotional channels.";
       } else {
-        responseText = `[Inference Resolved] Parsed search query: "${promptText}". The downstream inference engine recommends focusing on the active catalyst triggers in Mao (Spouse) and Si (Ming) palaces to optimize somatic and relational vitality.`;
+        responseText = `[Inference Resolved] Parsed search query: "${promptText}". The downstream inference engine recommends focusing on the active catalyst triggers in Mao (Spouse) and Chou (Wealth) palaces to optimize somatic and relational vitality.`;
       }
 
       const aiResponse: ChatMessage = {
