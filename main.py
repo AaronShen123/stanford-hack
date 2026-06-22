@@ -105,9 +105,9 @@ async def synthesize_astrology(payload: AstrologyRequest):
         houses=west_pos["houses"]
     )
     
-    # 3. Compute Chinese ZWDS using True Local Time (LAT) (asynchronous Node subprocess execution)
+    # 3. Compute Chinese ZWDS using raw Local Datetime to align with standard ZWDS rules
     zwds_pos = await zwds_calc.calculate_chart(
-        tlt_datetime=metrics["tlt_datetime"],
+        tlt_datetime=metrics["local_datetime"],
         gender=payload.gender.value,
         latitude=payload.latitude,
         longitude=payload.longitude
