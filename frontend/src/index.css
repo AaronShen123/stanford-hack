@@ -25,3 +25,14 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #a8a29e; /* Stone 400 */
 }
+
+/* Zi Wei Dou Shu chart board — light theme custom properties */
+.ziwei-board {
+  --t-bg: #ffffff;
+  --t-surface: #faf9f7;
+  --t-border: #e7e5e4;
+  --t-text: #1c1917;
+  --t-faint: #78716c;
+  --t-gold: #b07820;
+  color: var(--t-text);
+}

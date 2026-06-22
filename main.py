@@ -10,7 +10,10 @@ from astrology.calculators.western import WesternAstrologyCalculator
 from astrology.calculators.scaffold_zwds import ScaffoldZWDSCalculator
 from astrology.core.synthesis import generate_synthesis_flags
 from astrology.core.rag import retrieve_astrological_context
-from astrology.core.prompt_compiler import compile_prompt, generate_completion
+from astrology.core.prompt_compiler import compile_prompt, generate_completion, format_chart_context, chat_with_master
+import re
+from typing import Optional, List
+from pydantic import BaseModel
 
 app = FastAPI(
     title="Astrology Synthesis Engine API",
@@ -110,7 +113,8 @@ async def synthesize_astrology(payload: AstrologyRequest):
         tlt_datetime=metrics["tlt_datetime"],
         gender=payload.gender.value,
         latitude=payload.latitude,
-        longitude=payload.longitude
+        longitude=payload.longitude,
+        jd_ut=metrics["jd_ut"]
     )
     
     zwds_matrix = ZWDSMatrix(**zwds_pos)
@@ -183,3 +187,96 @@ async def generate_astrology_completion(payload: AstrologyRequest):
         compiled_prompt=compiled_prompt,
         reading=reading
     )
+
+
+# ── Interactive ZWDS-master chat (grounded in the natal chart + 流年/流日 transits) ──
+
+class ChatTurn(BaseModel):
+    role: str
+    content: str
+
+
+class ChatRequest(BaseModel):
+    request: AstrologyRequest
+    messages: List[ChatTurn] = []
+    question: str
+    target_date: Optional[str] = None  # explicit YYYY-MM-DD; else detected from question
+    time_index: Optional[int] = None   # 0=Zi..11=Hai branch the frontend rendered; unifies AI ↔ on-screen chart
+
+
+class ChatResponse(BaseModel):
+    answer: str
+    horoscope_date: Optional[str] = None
+
+
+def _detect_date(text: str) -> Optional[str]:
+    """Pull a past date out of a free-text question. Full Y-M-D if present,
+    otherwise a bare year maps to mid-year for a 流年 (annual) reading."""
+    if not text:
+        return None
+    m = re.search(r"((?:19|20)\d{2})\D{1,3}(\d{1,2})\D{1,3}(\d{1,2})", text)
+    if m:
+        y, mo, d = int(m.group(1)), int(m.group(2)), int(m.group(3))
+        if 1 <= mo <= 12 and 1 <= d <= 31:
+            return f"{y:04d}-{mo:02d}-{d:02d}"
+    m = re.search(r"((?:19|20)\d{2})\D{1,3}(\d{1,2})\s*月", text)
+    if m:
+        y, mo = int(m.group(1)), int(m.group(2))
+        if 1 <= mo <= 12:
+            return f"{y:04d}-{mo:02d}-15"
+    m = re.search(r"\b((?:19|20)\d{2})\b", text)
+    if m:
+        return f"{m.group(1)}-06-15"
+    return None
+
+
+@app.post(
+    "/api/v1/astrology/chat",
+    response_model=ChatResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Ask the ZWDS master — grounded, multi-turn reading",
+    description="Answers questions strictly from the subject's natal chart. If the question names a past date or year, the 大限/流年/流月/流日 transits are computed and used to reconstruct what likely happened.",
+)
+async def astrology_chat(payload: ChatRequest):
+    metrics = calculate_time_metrics(
+        birth_date=payload.request.birth_date,
+        birth_time=payload.request.birth_time,
+        longitude=payload.request.longitude,
+        timezone_offset=payload.request.timezone_offset,
+    )
+
+    # Natal chart — the grounding for every claim (no fabrication).
+    # `time_index` is the 时辰 branch the frontend already rendered; passing it
+    # makes the AI read the SAME chart the user sees (single source of truth).
+    # When absent, the calculator falls back to its True-Local-Time derivation.
+    chart = await zwds_calc.calculate_chart(
+        tlt_datetime=metrics["tlt_datetime"],
+        gender=payload.request.gender.value,
+        longitude=payload.request.longitude,
+        time_index=payload.time_index,
+    )
+
+    # If a date/year is referenced, compute the run-time transits for it
+    # against the very same chart.
+    target = payload.target_date or _detect_date(payload.question)
+    horoscope = None
+    if target:
+        horoscope = await zwds_calc.compute_horoscope(
+            tlt_datetime=metrics["tlt_datetime"],
+            target_date=target,
+            gender=payload.request.gender.value,
+            time_index=payload.time_index,
+        )
+
+    chart_context = format_chart_context({"zwds_matrix": chart}, horoscope)
+
+    try:
+        answer = await chat_with_master(
+            chart_context=chart_context,
+            history=[t.model_dump() for t in payload.messages],
+            question=payload.question,
+        )
+    except ValueError as val_err:
+        raise Exception(f"Configuration Error: {str(val_err)}")
+
+    return ChatResponse(answer=answer, horoscope_date=target)

@@ -1,7 +1,3 @@
-import asyncio
-import json
-import os
-import sys
 from datetime import datetime
 from typing import Dict, Any
 from astrology.calculators.base_zwds import AbstractZWDSCalculator
@@ -95,13 +91,19 @@ def build_stars_metadata(palace: Dict[str, Any]) -> list:
         elif status in ("Exhaust", "陷", "Xian", "Dark"):
             brightness = "Dark"
         
+        # Context-Aware Borrowing: Reduce brightness if borrowed
+        if s.get("is_borrowed", False):
+            if brightness == "Radiant":
+                brightness = "Neutral"
+        
         info = STAR_MAPPING.get(name, {"name": name, "classification": "Benefic", "archetype": ""})
         metadata.append({
             "name": name,
             "brightness_index": brightness,
             "classification": info["classification"],
             "archetype_definition": info["archetype"],
-            "is_borrowed": s.get("is_borrowed", False)
+            "is_borrowed": s.get("is_borrowed", False),
+            "mutagen": s.get("mutagen", None)
         })
     for name in palace.get("minor_stars", []):
         import re
@@ -115,49 +117,128 @@ def build_stars_metadata(palace: Dict[str, Any]) -> list:
         })
     return metadata
 
-def compute_lny_day(year: int) -> int:
-    """
-    Approximates the day-of-year for Chinese New Year using a known
-    astronomical lookup table covering 1900-2100. Falls back to
-    a Metonic cycle approximation for years outside the table.
-    """
-    # Comprehensive lookup table of known LNY day-of-year values
-    # Sources: astronomical almanac data
-    KNOWN_LNY = {
-        1900: 31, 1901: 19, 1902: 8, 1903: 29, 1904: 16, 1905: 4, 1906: 25, 1907: 13, 1908: 2, 1909: 22,
-        1910: 10, 1911: 30, 1912: 18, 1913: 6, 1914: 26, 1915: 14, 1916: 3, 1917: 23, 1918: 11, 1919: 1,
-        1920: 20, 1921: 8, 1922: 28, 1923: 16, 1924: 5, 1925: 24, 1926: 13, 1927: 2, 1928: 23, 1929: 10,
-        1930: 30, 1931: 17, 1932: 6, 1933: 26, 1934: 14, 1935: 4, 1936: 24, 1937: 11, 1938: 31, 1939: 19,
-        1940: 8, 1941: 27, 1942: 15, 1943: 5, 1944: 25, 1945: 13, 1946: 2, 1947: 22, 1948: 10, 1949: 29,
-        1950: 17, 1951: 6, 1952: 27, 1953: 14, 1954: 3, 1955: 24, 1956: 12, 1957: 31, 1958: 18, 1959: 8,
-        1960: 28, 1961: 15, 1962: 5, 1963: 25, 1964: 13, 1965: 2, 1966: 21, 1967: 9, 1968: 30, 1969: 17,
-        1970: 6, 1971: 27, 1972: 15, 1973: 3, 1974: 23, 1975: 11, 1976: 31, 1977: 18, 1978: 7, 1979: 28,
-        1980: 16, 1981: 5, 1982: 25, 1983: 13, 1984: 2, 1985: 20, 1986: 9, 1987: 29, 1988: 17, 1989: 6,
-        1990: 27, 1991: 15, 1992: 4, 1993: 23, 1994: 10, 1995: 31, 1996: 19, 1997: 7, 1998: 28, 1999: 16,
-        2000: 5, 2001: 24, 2002: 12, 2003: 1, 2004: 22, 2005: 9, 2006: 29, 2007: 18, 2008: 7, 2009: 26,
-        2010: 14, 2011: 3, 2012: 23, 2013: 10, 2014: 31, 2015: 19, 2016: 8, 2017: 28, 2018: 16, 2019: 5,
-        2020: 25, 2021: 12, 2022: 1, 2023: 22, 2024: 10, 2025: 29, 2026: 17, 2027: 6, 2028: 26, 2029: 13,
-        2030: 3, 2031: 23, 2032: 11, 2033: 31, 2034: 19, 2035: 8, 2036: 28, 2037: 15, 2038: 4, 2039: 24,
-        2040: 12, 2041: 1, 2042: 22, 2043: 10, 2044: 30, 2045: 17, 2046: 6, 2047: 26, 2048: 14, 2049: 2,
-        2050: 23, 2051: 11, 2052: 1, 2053: 19, 2054: 8, 2055: 28, 2056: 15, 2057: 4, 2058: 24, 2059: 12,
-        2060: 2, 2061: 21, 2062: 9, 2063: 29, 2064: 17, 2065: 5, 2066: 26, 2067: 14, 2068: 3, 2069: 23,
-        2070: 11, 2071: 31, 2072: 19, 2073: 7, 2074: 27, 2075: 15, 2076: 5, 2077: 24, 2078: 12, 2079: 2,
-        2080: 22, 2081: 9, 2082: 29, 2083: 17, 2084: 6, 2085: 26, 2086: 14, 2087: 3, 2088: 24, 2089: 10,
-        2090: 30, 2091: 18, 2092: 7, 2093: 27, 2094: 15, 2095: 5, 2096: 25, 2097: 12, 2098: 1, 2099: 21, 2100: 9
-    }
-    if year in KNOWN_LNY:
-        return KNOWN_LNY[year]
-    # Metonic cycle fallback: LNY repeats approximately every 19 years
-    cycle_year = 2000 + ((year - 2000) % 19)
-    return KNOWN_LNY.get(cycle_year, 30)
+
+# ── Chinese -> project-alias translation tables ──────────────────────────
+# Same correspondence the reference repo (Renhuai123/ziwei-doushu) relies on,
+# i.e. iztro's Chinese star names mapped to this project's English aliases.
+_STEM_CN2PY = {"甲": "Jia", "乙": "Yi", "丙": "Bing", "丁": "Ding", "戊": "Wu",
+               "己": "Ji", "庚": "Geng", "辛": "Xin", "壬": "Ren", "癸": "Gui"}
+_BRANCH_CN2PY = {"子": "Zi", "丑": "Chou", "寅": "Yin", "卯": "Mao", "辰": "Chen",
+                 "巳": "Si", "午": "Wu", "未": "Wei", "申": "Shen", "酉": "You",
+                 "戌": "Xu", "亥": "Hai"}
+_PALACE_CN2EN = {
+    "命宫": "Life Palace (命宮)", "兄弟": "Siblings Palace (兄弟)",
+    "夫妻": "Marriage Palace (夫妻)", "子女": "Child Palace (子女)",
+    "财帛": "Wealth Palace (財帛)", "疾厄": "Health Palace (疾厄)",
+    "迁移": "Travel Palace (遷移)", "仆役": "Friends Palace (交友)",
+    "官禄": "Career Palace (官祿)", "田宅": "Property Palace (田宅)",
+    "福德": "Happy Palace (福德)", "父母": "Parents Palace (父母)",
+}
+_STAR_CN2EN = {
+    "紫微": "Emperor", "天府": "Heavenly Mansion", "天机": "Advisor",
+    "太阳": "Sun", "太阴": "Moon", "武曲": "Finance", "天同": "Mascot",
+    "廉贞": "Justice", "贪狼": "Flirt", "巨门": "Advocate", "天梁": "Blessing",
+    "七杀": "Marshal", "破军": "Pioneer", "天相": "Minister",
+    "左辅": "Intellect", "右弼": "Right Assist", "文曲": "Arts",
+    "文昌": "Academic", "禄存": "Wealth Star", "天魁": "Status", "天钺": "Grace",
+    "擎羊": "Sternness", "陀罗": "Obstacle", "地空": "Void", "地劫": "Exhaust",
+    "孤辰": "Gu Chen", "天空": "Tian Kong", "天巫": "Tian Wu",
+    "火星": "Fire Star", "铃星": "Bell Star", "天马": "Tian Ma",
+    "天喜": "Tian Xi", "天姚": "Tian Yao", "天刑": "Tian Xing",
+    "红鸾": "Red Phoenix", "咸池": "Peach Blossom", "天才": "Genius",
+    "天寿": "Longevity", "天官": "Tian Guan", "天福": "Tian Fu Aux",
+    "天德": "Tian De", "月德": "Yue De", "天贵": "Tian Gui",
+    "天月": "Tian Yue Aux", "天哭": "Tian Ku", "天虚": "Tian Xu",
+    "龙池": "Dragon Pool", "凤阁": "Phoenix Pavilion", "台辅": "Tai Fu",
+    "封诰": "Feng Gao", "三台": "San Tai", "八座": "Ba Zuo", "恩光": "En Guang",
+    "天伤": "Tian Shang", "天使": "Tian Shi", "解神": "Jie Shen",
+    "华盖": "Hua Gai", "截路": "Jie Lu", "蜚廉": "Fei Lian", "年解": "Nian Jie",
+    "寡宿": "Gua Su", "破碎": "Po Sui", "阴煞": "Yin Sha", "旬空": "Xun Kong",
+    "空亡": "Kong Wang", "天厨": "Tian Chu",
+}
+_BRIGHTNESS_CN2EN = {"庙": "Radiant", "旺": "Radiant", "得": "Neutral",
+                     "利": "Neutral", "平": "Neutral", "不": "Dark", "陷": "Dark"}
+_MUTAGEN_CN2EN = {"禄": "Hua Lu", "权": "Hua Quan", "科": "Hua Ke", "忌": "Hua Ji"}
+_CHANGSHENG_CN2EN = {
+    "长生": "Birth", "沐浴": "Bath", "冠带": "Youth", "临官": "Arrive",
+    "帝旺": "Imperial", "衰": "Decay", "病": "Sickness", "死": "Death",
+    "墓": "Grave", "绝": "Cut", "胎": "Tomb", "养": "Exhaust",
+}
+_BOSHI_CN2EN = {
+    "博士": "Scholar", "力士": "Strength", "青龙": "Dragon", "小耗": "Small Loss",
+    "将军": "General", "奏书": "Memorial", "飞廉": "Fei Lian", "喜神": "Joy",
+    "病符": "Sickness God", "大耗": "Big Loss", "伏兵": "Ambush", "官府": "Officer",
+}
+_BUREAU_CN2EN = {"水二局": "Water 2", "木三局": "Wood 3", "金四局": "Metal 4",
+                 "土五局": "Earth 5", "火六局": "Fire 6"}
+
+
+def _zh(cn: str) -> str:
+    """Format a Chinese star/bureau name as 'English (中文)'."""
+    return f"{_STAR_CN2EN.get(cn, cn)} ({cn})"
+
+
+_CN_DIGIT = {"〇": 0, "零": 0, "一": 1, "二": 2, "三": 3, "四": 4,
+             "五": 5, "六": 6, "七": 7, "八": 8, "九": 9, "十": 10}
+
+
+def _cn_month(m: str) -> int:
+    m = m.replace("正", "一")
+    if m == "十":
+        return 10
+    if m.startswith("十"):
+        return 10 + _CN_DIGIT.get(m[1], 0)
+    return _CN_DIGIT.get(m, 0)
+
+
+def _cn_day(d: str) -> int:
+    if d.startswith("初"):
+        return _CN_DIGIT.get(d[1], 0)
+    if d in ("二十",):
+        return 20
+    if d.startswith("廿"):
+        return 20 + (_CN_DIGIT.get(d[1], 0) if len(d) > 1 else 0)
+    if d in ("三十", "卅"):
+        return 30
+    if d == "十":
+        return 10
+    if d.startswith("十"):
+        return 10 + _CN_DIGIT.get(d[1], 0)
+    return _CN_DIGIT.get(d, 0)
+
+
+def _lunar_to_english(cn_lunar: str) -> str:
+    """Convert iztro's Chinese lunar date (e.g. '二〇〇〇年九月十九') to English."""
+    try:
+        year_part, rest = cn_lunar.split("年")
+        year = int("".join(str(_CN_DIGIT[c]) for c in year_part))
+        leap = "闰" in rest
+        rest = rest.replace("闰", "")
+        month_part, day_part = rest.split("月")
+        return (f"Lunar {year}, {'leap ' if leap else ''}"
+                f"Month {_cn_month(month_part)}, Day {_cn_day(day_part)}")
+    except Exception:
+        return cn_lunar
+
 
 class ScaffoldZWDSCalculator(AbstractZWDSCalculator):
     """
-    Concrete implementation of ZWDS calculator using an asynchronous subprocess 
-    bridge to execute Node.js (iztro library). Falls back to a deterministic 
-    astrology matrix on failure or absence of Node.
+    Concrete ZWDS calculator backed by ``py-iztro`` (the Python binding of the
+    iztro engine — https://github.com/SylarLong/iztro).
+
+    The reference implementation the project is validated against
+    (Renhuai123/ziwei-doushu) delegates its entire chart computation to iztro,
+    so this calculator does the same and then maps iztro's authoritative output
+    (star positions, brightness, four transformations, masters, bureau, decadal
+    limits, 长生/博士 cycles, 小限) into this project's ZWDSMatrix schema.
+
+    No hardcoded chart datasets, per-profile overrides, or Node subprocess.
     """
-    
+
+    def __init__(self) -> None:
+        from py_iztro import Astro  # imported lazily so import errors are clear
+        self._astro = Astro()
+
     async def calculate_chart(
         self,
         tlt_datetime: datetime,
@@ -166,255 +247,188 @@ class ScaffoldZWDSCalculator(AbstractZWDSCalculator):
         longitude: float = 0.0,
         **kwargs: Any
     ) -> Dict[str, Any]:
-        birth_date_str = tlt_datetime.strftime("%Y-%m-%d")
-        birth_time_str = tlt_datetime.strftime("%H:%M:%S")
-        
-        try:
-            # Locate bridge file under astrology/calculators/bridges/
-            bridge_path = os.path.join(
-                os.path.dirname(__file__), "bridges", "iztro_bridge.js"
+        astro = self._resolve_astro(tlt_datetime, gender, kwargs.get("time_index"))
+
+        palaces = [self._build_palace(p) for p in astro.palaces]
+        self._apply_borrowing(palaces)
+
+        for palace in palaces:
+            has_ji = (
+                any(s.get("mutagen") == "Hua Ji" for s in palace["main_stars"])
+                or "Hua Ji" in palace["minor_stars"]
             )
-            
-            if os.path.exists(bridge_path):
-                payload = json.dumps({
-                    "date": birth_date_str,
-                    "time": birth_time_str,
-                    "lat": latitude,
-                    "lon": longitude,
-                    "gender": gender
-                })
-                
-                process = await asyncio.create_subprocess_exec(
-                    'node', bridge_path,
-                    stdin=asyncio.subprocess.PIPE,
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE
-                )
-                
-                stdout, stderr = await process.communicate(input=payload.encode())
-                
-                if process.returncode == 0:
-                    return json.loads(stdout.decode())
-                else:
-                    print(
-                        f"ZWDS Subprocess Bridge Error (code {process.returncode}): {stderr.decode()}",
-                        file=sys.stderr
-                    )
-        except Exception as e:
-            print(f"ZWDS Subprocess Bridge Exception: {e}", file=sys.stderr)
-            
-        # Fallback payload: Conforming to ZWDSMatrix schema with test markers for aspect triggers
-        palaces = [
-            {
-                "name": "Life Palace (命宮)",
-                "stem_branch": "Ji-Si",
-                "stars": ["Zi Wei", "Tian Fu", "Zuo Fu"],
-                "decadal_range": "4–13",
-                "main_stars": [{"name": "Emperor", "status": "Radiant"}, {"name": "Heavenly Mansion", "status": "Radiant"}],
-                "minor_stars": ["Intellect", "Tian Kong", "Gu Chen", "Tian Wu"],
-                "changsheng": "Birth",
-                "pillar_gods": ["Stern", "Beginning"],
-                "one_year_luck": "36, 48, 60"
-            },
-            {
-                "name": "Parents Palace (父母)",
-                "stem_branch": "Geng-Wu",
-                "stars": ["Qi Sha", "Hua Quan"],
-                "decadal_range": "14–23",
-                "main_stars": [{"name": "Marshal", "status": "Radiant"}],
-                "minor_stars": ["Hua Quan"],
-                "changsheng": "Bath",
-                "pillar_gods": ["Stern", "Beginning"],
-                "one_year_luck": "37, 49, 61"
-            },
-            {
-                "name": "Happy Palace (福德)",
-                "stem_branch": "Ji-Wei",
-                "stars": ["Tian Liang", "Hua Lu"],
-                "decadal_range": "24–33",
-                "main_stars": [{"name": "Blessing", "status": "Radiant"}],
-                "minor_stars": ["Hua Lu"],
-                "changsheng": "Youth",
-                "pillar_gods": ["Officer", "Academic"],
-                "one_year_luck": "38, 50, 62"
-            },
-            {
-                "name": "Property Palace (田宅)",
-                "stem_branch": "Wu-Shen",
-                "stars": ["Ju Men", "Di Jie"],
-                "decadal_range": "34–43",
-                "main_stars": [{"name": "Advocate", "status": "Exhaust"}],
-                "minor_stars": ["Exhaust"],
-                "changsheng": "Arrive",
-                "pillar_gods": ["Officer", "Academic"],
-                "one_year_luck": "39, 51, 63"
-            },
-            {
-                "name": "Career Palace (官祿)",
-                "stem_branch": "Ding-You",
-                "stars": ["Tan Lang", "Di Kong"],
-                "decadal_range": "44–53",
-                "main_stars": [{"name": "Flirt", "status": "Radiant"}],
-                "minor_stars": ["Void"],
-                "changsheng": "Imperial",
-                "pillar_gods": ["General", "Cavalry"],
-                "one_year_luck": "40, 52, 64"
-            },
-            {
-                "name": "Friends Palace (交友)",
-                "stem_branch": "Bing-Xu",
-                "stars": ["Tai Yin", "Tuo Luo"],
-                "decadal_range": "54–63",
-                "main_stars": [{"name": "Moon", "status": "Exhaust"}],
-                "minor_stars": ["Obstacle"],
-                "changsheng": "Decay",
-                "pillar_gods": ["General", "Cavalry"],
-                "one_year_luck": "41, 53, 65"
-            },
-            {
-                "name": "Travel Palace (遷移)",
-                "stem_branch": "Yi-Hai",
-                "stars": ["Tian Ji", "Qing Yang"],
-                "decadal_range": "64–73",
-                "main_stars": [{"name": "Advisor", "status": "Radiant"}],
-                "minor_stars": ["Sternness"],
-                "changsheng": "Sickness",
-                "pillar_gods": ["Scribe", "Doctor"],
-                "one_year_luck": "42, 54, 66"
-            },
-            {
-                "name": "Health Palace (疾厄)",
-                "stem_branch": "Jia-Zi",
-                "stars": ["Lian Zhen (Xian)", "Tian Yue"],
-                "decadal_range": "74–83",
-                "main_stars": [{"name": "Justice", "status": "Exhaust"}],
-                "minor_stars": ["Grace"],
-                "changsheng": "Death",
-                "pillar_gods": ["Scribe", "Doctor"],
-                "one_year_luck": "31, 43, 55"
-            },
-            {
-                "name": "Wealth Palace (財帛)",
-                "stem_branch": "Gui-Chou",
-                "stars": ["Tian Tong", "Lu Cun"],
-                "decadal_range": "84–93",
-                "main_stars": [{"name": "Mascot", "status": "Radiant"}],
-                "minor_stars": ["Wealth Star"],
-                "changsheng": "Grave",
-                "pillar_gods": ["Blacksmith", "Mason"],
-                "one_year_luck": "32, 44, 56"
-            },
-            {
-                "name": "Child Palace (子女)",
-                "stem_branch": "Ren-Yin",
-                "stars": ["Wu Qu", "Tian Kui"],
-                "decadal_range": "94–103",
-                "main_stars": [{"name": "Finance", "status": "Radiant"}],
-                "minor_stars": ["Status"],
-                "changsheng": "Cut",
-                "pillar_gods": ["Blacksmith", "Mason"],
-                "one_year_luck": "33, 45, 57"
-            },
-            {
-                "name": "Marriage Palace (夫妻)",
-                "stem_branch": "Xin-Mao",
-                "stars": ["Tai Yang", "Wen Qu", "Hua-Ji"],
-                "decadal_range": "104–113",
-                "main_stars": [{"name": "Sun", "status": "Exhaust"}],
-                "minor_stars": ["Arts", "Hua Ji"],
-                "changsheng": "Tomb",
-                "pillar_gods": ["Farmer", "Weaver"],
-                "one_year_luck": "34, 46, 58"
-            },
-            {
-                "name": "Siblings Palace (兄弟)",
-                "stem_branch": "Geng-Chen",
-                "stars": ["Tian Ji", "You Bi"],
-                "decadal_range": "114–123",
-                "main_stars": [{"name": "Advisor", "status": "Radiant"}],
-                "minor_stars": ["Right Assist"],
-                "changsheng": "Exhaust",
-                "pillar_gods": ["Farmer", "Weaver"],
-                "one_year_luck": "35, 47, 59"
-            }
-        ]
-        
-        # Fallback calculation of Year and Month Bazi and Lunar Date
-        year = tlt_datetime.year
-        month = tlt_datetime.month
-        day = tlt_datetime.day
-        hour = tlt_datetime.hour
+            palace["intensity"] = 0.8 if has_ji else 1.0
+            palace["stars_metadata"] = build_stars_metadata(palace)
 
-        stems = ["Jia", "Yi", "Bing", "Ding", "Wu", "Ji", "Geng", "Xin", "Ren", "Gui"]
-        branches = ["Zi", "Chou", "Yin", "Mao", "Chen", "Si", "Wu", "Wei", "Shen", "You", "Xu", "Hai"]
-        
-        y_stem_idx = (year - 4) % 10
-        y_branch_idx = (year - 4) % 12
-        yearly_stem_branch = f"{stems[y_stem_idx]}-{branches[y_branch_idx]}"
-        
-        m_branch_idx = month % 12
-        m_branch = branches[m_branch_idx]
-        
-        start_stem_for_chou = {
-            0: 3, 5: 3,
-            1: 5, 6: 5,
-            2: 7, 7: 7,
-            3: 9, 8: 9,
-            4: 1, 9: 1
-        }
-        base_stem = start_stem_for_chou[y_stem_idx]
-        m_stem_idx = (base_stem + (month - 1)) % 10
-        monthly_branch = f"{stems[m_stem_idx]}-{m_branch}"
-        
-        lny_day = compute_lny_day(year)
-        
-        import datetime
-        birth_date = datetime.date(year, month, day)
-        lny_date = datetime.date(year, 1, 1) + datetime.timedelta(days=lny_day - 1)
-        if birth_date < lny_date:
-            l_year = year - 1
-            prev_lny_day = compute_lny_day(l_year)
-            prev_lny_date = datetime.date(l_year, 1, 1) + datetime.timedelta(days=prev_lny_day - 1)
-            days_since = (birth_date - prev_lny_date).days
-        else:
-            l_year = year
-            days_since = (birth_date - lny_date).days
-            
-        l_month = int(days_since / 29.53) + 1
-        l_day = int(days_since % 29.53) + 1
-        
-        hour_labels = ["Zi", "Chou", "Yin", "Mao", "Chen", "Si", "Wu", "Wei", "Shen", "You", "Xu", "Hai"]
-        h_branch_idx = int((hour + 1) % 24 / 2)
-        hour_label = hour_labels[h_branch_idx]
-        
-        lunar_date_str = f"Year {yearly_stem_branch.split('-')[0]} ({l_year}), Month {l_month}, Day {l_day}, Hour {hour_label} (estimated)"
+        # year / month pillars from iztro's "庚辰 丙戌 丁未 乙巳" ganzhi string.
+        parts = (astro.chinese_date or "").split()
 
-        # Borrow stars for empty palaces in fallback
-        for i in range(12):
-            p = palaces[i]
-            if not p.get("main_stars"):
-                opp_idx = (i + 6) % 12
-                opp_p = palaces[opp_idx]
-                borrowed = []
-                for star in opp_p.get("main_stars", []):
-                    borrowed.append({
-                        "name": star["name"],
-                        "status": star.get("status", ""),
-                        "is_borrowed": True
-                    })
-                p["main_stars"] = borrowed
-                for star in borrowed:
-                    star_str = star["name"]
-                    if star["status"]:
-                        star_str += f"({star['status']})"
-                    p.setdefault("stars", []).append(star_str)
-
-        for p in palaces:
-            p["stars_metadata"] = build_stars_metadata(p)
+        def pillar(token: str) -> str:
+            if len(token) >= 2:
+                return f"{_STEM_CN2PY.get(token[0], token[0])}-{_BRANCH_CN2PY.get(token[1], token[1])}"
+            return token
 
         return {
             "palaces": palaces,
-            "yearly_stem_branch": yearly_stem_branch,
-            "monthly_branch": monthly_branch,
-            "lunar_date_str": lunar_date_str
+            "yearly_stem_branch": pillar(parts[0]) if parts else "",
+            "monthly_branch": pillar(parts[1]) if len(parts) > 1 else "",
+            "lunar_date_str": _lunar_to_english(astro.lunar_date),
+            "life_master": _zh(astro.soul),
+            "body_master": _zh(astro.body),
+            "bureau": f"{_BUREAU_CN2EN.get(astro.five_elements_class, astro.five_elements_class)} ({astro.five_elements_class})",
         }
+
+    def _resolve_astro(self, tlt_datetime: datetime, gender: str, time_index=None):
+        # iztro time index: 0..11 for 子..亥, 12 for late-Zi (23:00-23:59).
+        # If the caller supplies an explicit branch (time_index) — e.g. the one
+        # the frontend already resolved for the on-screen chart — use it so the
+        # AI reads the SAME chart the user sees (single source of truth).
+        if time_index is None:
+            hour = tlt_datetime.hour
+            time_index = 12 if hour == 23 else (hour + 1) // 2
+        gender_cn = "女" if gender.upper().startswith("F") else "男"
+        solar_date = tlt_datetime.strftime("%Y-%m-%d")
+        return self._astro.by_solar(solar_date, time_index, gender_cn, True, "zh-CN")
+
+    async def compute_horoscope(
+        self,
+        tlt_datetime: datetime,
+        target_date: str,
+        gender: str = "M",
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        """Compute the 大限/流年/流月/流日 (decadal / yearly / monthly / daily)
+        transits for ``target_date`` against this natal chart.
+
+        The key signal for event reconstruction is each scope's 四化 (Si-Hua):
+        the four stars that turn Lu/Quan/Ke/Ji that period and the natal palace
+        they fall on. Names are translated to the project's English aliases.
+        """
+        astro = self._resolve_astro(tlt_datetime, gender, kwargs.get("time_index"))
+        h = astro.horoscope(target_date)
+
+        # natal branch -> natal palace name, so we can say which life domain a
+        # transit 命宮 / 四化 activates.
+        natal = self._build_natal_index(astro)
+
+        def gz(scope) -> str:
+            return (f"{_STEM_CN2PY.get(scope.heavenly_stem, scope.heavenly_stem)}-"
+                    f"{_BRANCH_CN2PY.get(scope.earthly_branch, scope.earthly_branch)}")
+
+        def mutagen(scope) -> Dict[str, str]:
+            # iztro mutagen list is ordered [Lu, Quan, Ke, Ji].
+            labels = ["Hua Lu", "Hua Quan", "Hua Ke", "Hua Ji"]
+            out = {}
+            for label, cn in zip(labels, list(getattr(scope, "mutagen", []) or [])):
+                out[label] = _STAR_CN2EN.get(cn, cn)
+            return out
+
+        def life_palace(scope) -> str:
+            branch = _BRANCH_CN2PY.get(scope.earthly_branch, scope.earthly_branch)
+            return natal.get(branch, "")
+
+        def scope_block(scope) -> Dict[str, Any]:
+            if scope is None:
+                return {}
+            block = {
+                "stem_branch": gz(scope),
+                "transit_life_palace_over_natal": life_palace(scope),
+                "mutagen": mutagen(scope),
+            }
+            rng = getattr(scope, "range", None)
+            if rng:
+                block["decadal_range"] = f"{rng[0]}–{rng[1]}"
+            return block
+
+        return {
+            "target_date": target_date,
+            "decadal": scope_block(getattr(h, "decadal", None)),
+            "yearly": scope_block(getattr(h, "yearly", None)),
+            "monthly": scope_block(getattr(h, "monthly", None)),
+            "daily": scope_block(getattr(h, "daily", None)),
+        }
+
+    @staticmethod
+    def _build_natal_index(astro: Any) -> Dict[str, str]:
+        """Map each natal earthly-branch (Pinyin) to its palace English name."""
+        index = {}
+        for p in astro.palaces:
+            branch = _BRANCH_CN2PY.get(p.earthly_branch, p.earthly_branch)
+            index[branch] = _PALACE_CN2EN.get(p.name, p.name)
+        return index
+
+    # -- helpers ----------------------------------------------------------
+    def _build_palace(self, p: Any) -> Dict[str, Any]:
+        stem = _STEM_CN2PY.get(p.heavenly_stem, p.heavenly_stem)
+        branch = _BRANCH_CN2PY.get(p.earthly_branch, p.earthly_branch)
+
+        main_stars, minor_stars, stars = [], [], []
+
+        for s in (p.major_stars or []):
+            name = _STAR_CN2EN.get(s.name, s.name)
+            status = _BRIGHTNESS_CN2EN.get(s.brightness, "Neutral")
+            mutagen = _MUTAGEN_CN2EN.get(s.mutagen) if s.mutagen else None
+            main_stars.append({
+                "name": name, "status": status,
+                "is_borrowed": False, "mutagen": mutagen,
+            })
+            stars.append(f"{name}({status})")
+            if mutagen:
+                minor_stars.append(mutagen)
+                stars.append(mutagen)
+
+        for s in list(p.minor_stars or []) + list(p.adjective_stars or []):
+            name = _STAR_CN2EN.get(s.name, s.name)
+            minor_stars.append(name)
+            stars.append(name)
+            mut = _MUTAGEN_CN2EN.get(getattr(s, "mutagen", "") or "")
+            if mut:
+                minor_stars.append(mut)
+                stars.append(mut)
+
+        rng = getattr(p.decadal, "range", None)
+        ages = list(getattr(p, "ages", []) or [])
+        return {
+            "name": _PALACE_CN2EN.get(p.name, p.name),
+            "stem_branch": f"{stem}-{branch}",
+            "stars": stars,
+            "decadal_range": f"{rng[0]}–{rng[1]}" if rng else "",
+            "main_stars": main_stars,
+            "minor_stars": minor_stars,
+            "changsheng": _CHANGSHENG_CN2EN.get(p.changsheng12, p.changsheng12 or ""),
+            "pillar_gods": [_BOSHI_CN2EN.get(p.boshi12, p.boshi12)] if p.boshi12 else [],
+            "one_year_luck": ", ".join(str(a) for a in ages[:7]),
+            "intensity": 1.0,
+            "_branch": branch,  # transient key for borrowing; removed below
+        }
+
+    def _apply_borrowing(self, palaces: list) -> None:
+        """Empty palaces (no major star) borrow the opposite axis (branch+6).
+        Borrowed stars inherit the source mutagen; a borrowed Radiant star is
+        reduced to Neutral. This also prevents the frontend from falling back
+        to its hardcoded star list for empty palaces."""
+        order = ["Zi", "Chou", "Yin", "Mao", "Chen", "Si", "Wu", "Wei",
+                 "Shen", "You", "Xu", "Hai"]
+        by_branch_idx = {b: i for i, b in enumerate(order)}
+        branch_to_palace = {p["_branch"]: p for p in palaces}
+
+        for p in palaces:
+            if p["main_stars"]:
+                continue
+            opp_branch = order[(by_branch_idx[p["_branch"]] + 6) % 12]
+            source = branch_to_palace.get(opp_branch)
+            if not source:
+                continue
+            for s in source["main_stars"]:
+                status = "Neutral" if s["status"] == "Radiant" else s["status"]
+                p["main_stars"].append({
+                    "name": s["name"], "status": status,
+                    "is_borrowed": True, "mutagen": s.get("mutagen"),
+                })
+                p["stars"].append(f"{s['name']}({status})")
+                if s.get("mutagen"):
+                    p["minor_stars"].append(s["mutagen"])
+                    p["stars"].append(s["mutagen"])
+
+        for p in palaces:
+            p.pop("_branch", None)

@@ -37,8 +37,11 @@ class AstrologyRequest(BaseModel):
     @field_validator("birth_time")
     @classmethod
     def validate_birth_time(cls, v: str) -> str:
+        valid_branches = {"Zi", "Chou", "Yin", "Mao", "Chen", "Si", "Wu", "Wei", "Shen", "You", "Xu", "Hai"}
+        if v in valid_branches:
+            return v
         if not re.match(r"^\d{2}:\d{2}:\d{2}$", v):
-            raise ValueError("birth_time must match HH:MM:SS")
+            raise ValueError("birth_time must match HH:MM:SS or be a valid TimeBranch name (Zi-Hai)")
         from datetime import datetime
         try:
             datetime.strptime(v, "%H:%M:%S")
@@ -77,11 +80,13 @@ class StarMetadata(BaseModel):
     classification: str = "Benefic" # Benefic, Malefic
     archetype_definition: str = ""
     is_borrowed: Optional[bool] = False
+    mutagen: Optional[str] = None
 
 class MainStarModel(BaseModel):
     name: str
     status: Optional[str] = ""
     is_borrowed: Optional[bool] = False
+    mutagen: Optional[str] = None
 
 class ZWDSPalace(BaseModel):
     name: str = Field(..., description="Palace name (e.g. Ming, Wealth, Career)")
@@ -94,6 +99,7 @@ class ZWDSPalace(BaseModel):
     pillar_gods: List[str] = Field(default_factory=list, description="Pillar gods descriptors")
     one_year_luck: str = Field("", description="One year luck bounds")
     stars_metadata: List[StarMetadata] = Field(default_factory=list, description="Extended star definitions")
+    intensity: Optional[float] = 1.0
 
 
 class ZWDSMatrix(BaseModel):
@@ -101,6 +107,8 @@ class ZWDSMatrix(BaseModel):
     yearly_stem_branch: str = Field(..., description="Stem-Branch of the birth year")
     monthly_branch: str = Field(..., description="Earthly branch of the birth month")
     lunar_date_str: str = Field(..., description="Chinese lunar calendar representation of birth time")
+    life_master: Optional[str] = Field("", description="Life Master star name")
+    body_master: Optional[str] = Field("", description="Body Master star name")
 
 
 class AstrologyAspect(BaseModel):

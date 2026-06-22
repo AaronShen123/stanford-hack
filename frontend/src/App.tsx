@@ -4,7 +4,7 @@ import { fetchAstrologyCompletion, fetchAstrologySynthesis } from "./utils/api";
 import { generateStorageKey } from "./utils/storage";
 import InputsModule from "./components/InputsModule";
 import WesternChart from "./components/WesternChart";
-import ZWDSPalaceGrid from "./components/ZWDSPalaceGrid";
+import ZiweiBoard from "./components/ziwei/ZiweiBoard";
 import VectorDashboard from "./components/VectorDashboard";
 import ClientChat from "./components/ClientChat";
 import SafetyBanners from "./components/SafetyBanners";
@@ -474,13 +474,11 @@ export default function App() {
             <div className="flex-1 bg-white border border-stone-200 rounded-xl p-6 shadow-sm flex items-center justify-center overflow-hidden">
               <div className="w-full max-h-full overflow-y-auto">
                 {activeTab === "zwds" ? (
-                  <ZWDSPalaceGrid
-                    matrix={synthesis.zwds_matrix}
+                  <ZiweiBoard
                     birthDate={activeRequest?.birth_date || ""}
                     birthTime={activeRequest?.birth_time || ""}
                     gender={activeRequest?.gender || "M"}
-                    locationName={locationName}
-                    targetVector={activeRequest?.target_vector || "wealth"}
+                    longitude={activeRequest?.longitude ?? 120}
                   />
                 ) : (
                   <WesternChart matrix={synthesis.western_matrix} aspects={synthesis.synthesis_flags.aspects} />
@@ -507,6 +505,7 @@ export default function App() {
               onSelectSession={executeAstrologySynthesis}
               isLLMLoading={isLLMLoading}
               activeChartPayload={synthesis?.zwds_matrix}
+              activeRequest={activeRequest}
             />
             
           </div>

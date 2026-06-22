@@ -14,13 +14,14 @@ interface PalaceDataPayload {
   palaceName: string;
   branchLabel: string;
   decadalAgeRange: string;
-  mainStars?: { name: string; status?: string; is_borrowed?: boolean }[]; 
+  mainStars?: { name: string; status?: string; is_borrowed?: boolean; mutagen?: string }[]; 
   minorStars?: string[];   
   changshengStage?: string; 
   pillarGods?: string[];   
   oneYearLuck?: string;    
   hasHuaLu?: boolean;
   hasHuaJi?: boolean;
+  intensity?: number;
 }
 
 const starTranslations: Record<string, string> = {
@@ -73,15 +74,26 @@ const branchPalaceDetails: Record<string, { changshengStage: string; pillarGods:
   "Chen": { changshengStage: "Exhaust", pillarGods: ["Farmer", "Weaver"] }
 };
 
-// Palace names and decadal age ranges are DYNAMIC — computed by the iztro engine
-// based on birth month + hour. They must NOT be hardcoded to branch positions.
-// The backend returns palace.name and palace.decadal_range directly.
+const getEffectiveBrightness = (status: string | undefined, isBorrowed: boolean | undefined): string => {
+  if (!status) return "";
+  if (isBorrowed) {
+    if (status === "Radiant" || status === "Bright" || status === "Shiny") {
+      return "Neutral";
+    }
+  }
+  return status;
+};
 
 const DynamicPalaceCell = ({ data }: { data: PalaceDataPayload }) => {
   if (!data) return <div className="bg-white border border-stone-200 rounded-xl min-h-[175px]" />;
 
+  const cellOpacity = data.intensity !== undefined ? data.intensity : 1.0;
+
   return (
-    <div className="relative flex flex-col justify-between p-2.5 h-full min-h-[175px] bg-white border border-stone-200 rounded-xl hover:border-stone-950 transition-all duration-150 shadow-sm">
+    <div 
+      style={{ opacity: cellOpacity }}
+      className="relative flex flex-col justify-between p-2.5 h-full min-h-[175px] bg-white border border-stone-200 rounded-xl hover:border-stone-950 transition-all duration-150 shadow-sm"
+    >
       
       {/* Row 1: Palace Header & Fixed Coordinate Tag */}
       <div className="flex justify-between items-start w-full border-b border-stone-100 pb-1">
@@ -96,27 +108,30 @@ const DynamicPalaceCell = ({ data }: { data: PalaceDataPayload }) => {
       {/* Row 2: Main Stars & Dynamic Radiance Tokens */}
       <div className="mt-1.5 flex flex-col gap-0.5">
         {data.mainStars && data.mainStars.length > 0 ? (
-          data.mainStars.map((star, idx) => (
-            <div key={idx} className="flex items-baseline gap-1 text-xs font-extrabold text-stone-900 tracking-tight">
-              <span className={star.is_borrowed ? "text-stone-400 font-medium italic" : ""}>
-                {star.name}
-                {star.is_borrowed && <span className="text-[9px] font-normal text-stone-400 font-sans ml-1">(Borrowed)</span>}
-              </span>
-              {star.status && (
-                <span className={`text-[9px] font-mono font-bold px-0.5 rounded ${
-                  star.is_borrowed
-                    ? 'text-stone-400 bg-stone-50/50'
-                    : star.status === 'Radiant' || star.status === 'Bright' || star.status === 'Shiny'
-                    ? 'text-amber-600 bg-amber-50' 
-                    : star.status === 'Xian' || star.status === 'Dark' || star.status === 'Ruinous' || star.status === 'Exhaust'
-                    ? 'text-rose-600 bg-rose-50'
-                    : 'text-stone-400 bg-stone-50'
-                }`}>
-                  ({star.status})
+          data.mainStars.map((star, idx) => {
+            const effectiveStatus = getEffectiveBrightness(star.status, star.is_borrowed);
+            return (
+              <div key={idx} className={`flex items-baseline gap-1 text-xs font-extrabold text-stone-900 tracking-tight ${star.is_borrowed ? "opacity-50" : ""}`}>
+                <span className={star.is_borrowed ? "text-stone-400 font-medium italic" : ""}>
+                  {star.name}
+                  {star.is_borrowed && <span className="text-[9px] font-normal text-stone-400 font-sans ml-1">(Borrowed)</span>}
                 </span>
-              )}
-            </div>
-          ))
+                {effectiveStatus && (
+                  <span className={`text-[9px] font-mono font-bold px-0.5 rounded ${
+                    star.is_borrowed
+                      ? 'text-stone-400 bg-stone-50/50'
+                      : effectiveStatus === 'Radiant' || effectiveStatus === 'Bright' || effectiveStatus === 'Shiny'
+                      ? 'text-amber-600 bg-amber-50' 
+                      : effectiveStatus === 'Xian' || effectiveStatus === 'Dark' || effectiveStatus === 'Ruinous' || effectiveStatus === 'Exhaust'
+                      ? 'text-rose-600 bg-rose-50'
+                      : 'text-stone-400 bg-stone-50'
+                  }`}>
+                    ({effectiveStatus})
+                  </span>
+                )}
+              </div>
+            );
+          })
         ) : (
           <span className="text-xs text-stone-300 italic">No Major Stars</span>
         )}
@@ -294,7 +309,8 @@ export default function ZWDSPalaceGrid({
       changshengStage,
       pillarGods,
       oneYearLuck,
-      minorStars
+      minorStars,
+      intensity: palace.intensity !== undefined ? palace.intensity : 1.0
     };
   });
 
@@ -309,7 +325,7 @@ export default function ZWDSPalaceGrid({
       <div className="grid grid-cols-4 grid-rows-4 gap-2 w-full max-w-[720px] mx-auto">
         
         {/* Render Palaces around the border */}
-        {gridCells.map(({ palace, coords, hasHuaJi, hasHuaLu, branch, mainStars, changshengStage, pillarGods, oneYearLuck, minorStars }, idx) => {
+        {gridCells.map(({ palace, coords, hasHuaJi, hasHuaLu, branch, mainStars, changshengStage, pillarGods, oneYearLuck, minorStars, intensity }, idx) => {
           
           const cellData: PalaceDataPayload = {
             palaceName: palace.name,
@@ -321,7 +337,8 @@ export default function ZWDSPalaceGrid({
             pillarGods: pillarGods,
             oneYearLuck: oneYearLuck,
             hasHuaLu: hasHuaLu,
-            hasHuaJi: hasHuaJi
+            hasHuaJi: hasHuaJi,
+            intensity: intensity
           };
 
           return (
@@ -381,6 +398,18 @@ export default function ZWDSPalaceGrid({
               <span className="font-bold text-stone-600">Month Branch: </span>
               <span className="text-stone-800 font-semibold">{matrix.monthly_branch}</span>
             </div>
+            {matrix.life_master && (
+              <div>
+                <span className="font-bold text-stone-600">Life Master: </span>
+                <span className="text-stone-800 font-semibold">{matrix.life_master}</span>
+              </div>
+            )}
+            {matrix.body_master && (
+              <div>
+                <span className="font-bold text-stone-600">Body Master: </span>
+                <span className="text-stone-800 font-semibold">{matrix.body_master}</span>
+              </div>
+            )}
             <div className="text-[7.5px] text-stone-450 truncate mt-0.5">
               {matrix.lunar_date_str}
             </div>

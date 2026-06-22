@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import type { ChatMessage, AstrologyRequest, ZWDSMatrix } from "../types";
-import { loadChatHistory, saveChatHistory, getAllSessions } from "../utils/storage";
+import type { AstrologyRequest, ZWDSMatrix } from "../types";
+import { useMasterChat } from "../hooks/useMasterChat";
 import { MessageSquare, Send, History, Sparkles, User, Database, ArrowRight } from "lucide-react";
 
 // Helper to parse simple markdown bold elements
@@ -120,6 +120,7 @@ interface ClientChatProps {
   onSelectSession: (payload: AstrologyRequest) => void;
   isLLMLoading?: boolean;
   activeChartPayload?: ZWDSMatrix;
+  activeRequest?: AstrologyRequest | null;
 }
 
 export default function ClientChat({
@@ -127,55 +128,20 @@ export default function ClientChat({
   initialReading: _initialReading,
   onSelectSession,
   isLLMLoading = false,
-  activeChartPayload
+  activeChartPayload,
+  activeRequest
 }: ClientChatProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  // Data layer: all chat state, persistence, and the backend call live here.
+  const { messages, isThinking, sessions, quickActions: quickActionTabs, send } =
+    useMasterChat({ storageKey, activeRequest, activeChartPayload });
+
+  // UI-only state.
   const [inputValue, setInputValue] = useState("");
-  const [sessions, setSessions] = useState<any[]>([]);
   const [showHistoryPanel, setShowHistoryPanel] = useState(false);
-  const [quickActionTabs, setQuickActionTabs] = useState<string[]>([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   const isGenerated = !!storageKey;
-
-  // Load chat history and trigger proactive retrieval when active chart loads
-  useEffect(() => {
-    if (isGenerated && activeChartPayload) {
-      const history = loadChatHistory(storageKey);
-      
-      if (history.length === 0) {
-        const palaces = activeChartPayload?.palaces || [];
-        const siPalace = palaces.find(p => p.stem_branch.split("-")[1] === "Si");
-        const activeLifePalaceStars = siPalace?.main_stars?.map(s => `${s.name}${s.status ? `(${s.status})` : ""}`).join(", ") || "None";
-        
-        const greetingText = `System matrix localized. I have successfully traced the dynamic parameters for this profile. The Life Palace in Si holds [${activeLifePalaceStars}] alongside its underlying temporal age ranges and 1Y Luck streams. Click an analytical vector below to initiate deep downstream inference:`;
-        
-        const contextPrompt: ChatMessage = {
-          id: "initial_reading",
-          sender: "ai",
-          timestamp: new Date().toLocaleTimeString(),
-          text: greetingText
-        };
-        
-        const initialHistory = [contextPrompt];
-        setMessages(initialHistory);
-        saveChatHistory(storageKey, initialHistory);
-      } else {
-        setMessages(history);
-      }
-      
-      setQuickActionTabs([
-        "📊 Evaluate Systemic Friction vs Current 10Y Luck Window",
-        "💰 Audit Capital Accumulation Capacity (Main Stars Vector)",
-        "🔍 Track Catalyst Shifts (Active LU / JI Badge Triggers)"
-      ]);
-      setShowSuggestions(true);
-      
-      // Refresh sessions list
-      setSessions(getAllSessions());
-    }
-  }, [isGenerated, activeChartPayload, storageKey]);
+  const showSuggestions = isGenerated && messages.length > 0;
 
   // Auto scroll to latest message
   useEffect(() => {
@@ -183,82 +149,14 @@ export default function ClientChat({
   }, [messages, isLLMLoading]);
 
   const triggerSuggestedPrompt = (promptText: string) => {
-    if (!storageKey) return;
-
-    const userMsg: ChatMessage = {
-      id: Math.random().toString(36).substr(2, 9),
-      sender: "user",
-      text: promptText,
-      timestamp: new Date().toLocaleTimeString()
-    };
-
-    const updated = [...messages, userMsg];
-    setMessages(updated);
-    saveChatHistory(storageKey, updated);
-
-    // Simulate AI response based on the prompt clicked
-    setTimeout(() => {
-      let responseText = "";
-      if (promptText.includes("Friction") || promptText.includes("friction")) {
-        responseText = "**Systemic Friction & Luck Window Audit**:\n" +
-          "- **True Profile:** DOB 2000-10-16 (Geng-Chen Year) | Active Age: 25.\n" +
-          "- **Friction Index:** Calibrated at 1.34.\n" +
-          "- **Decadal Window:** Current 10Y Luck window (24–33 Happy Palace) transitions your professional focus. The Ascendant square Midheaven aspect acts as an operational modifier, resonating stress vectors directly into your Career Palace (You).\n" +
-          "- **Mitigation:** Decouple execution details from long-term trajectory targets to absorb stress and stabilize your analytical/Data Science engineering path.";
-      } else if (promptText.includes("Wealth") || promptText.includes("Capital") || promptText.includes("Wu Qu")) {
-        responseText = "**Wealth & Career Axis Audit**:\n" +
-          "- **Palace Anchors:** The Wealth Palace is anchored at Chou (Mascot / Radiant / Wealth Star / Grave), holding Lu Cun. Career Palace is at You (Flirt / Radiant / Void).\n" +
-          "- **Accumulation Vectors:** Lu Cun in Chou provides a resilient compound growth baseline. However, Career Palace (You) contains a speculative drain catalyst (Tan Lang + Di Kong).\n" +
-          "- **Strategic recommendation:** Avoid short-term high-leverage speculation. Direct capital towards long-term assets and engineering/Data Science career equity.";
-      } else if (promptText.includes("Hua-Ji") || promptText.includes("Catalyst") || promptText.includes("LU / JI")) {
-        responseText = "**Catalyst Shifts (LU / JI) & Cross-System Resonance**:\n" +
-          "- **Active Badges:** Spouse Palace (Mao) holds active **Hua-Ji** (JI) with Tai Yang, and Happy Palace (Wei) holds **Hua-Lu** (LU).\n" +
-          "- **Cross-System Translation:** The Spouse Palace Hua-Ji operates in resonance with Western relational aspects. This creates structural boundary friction, requiring strict boundary partitioning between engineering career objectives and relational spheres.\n" +
-          "- **Mitigation:** Run periodic conflict-resolution cycles and decouple operational details from emotional channels.";
-      } else {
-        responseText = `[Inference Resolved] Parsed search query: "${promptText}". The downstream inference engine recommends focusing on the active catalyst triggers in Mao (Spouse) and Chou (Wealth) palaces to optimize somatic and relational vitality.`;
-      }
-
-      const aiResponse: ChatMessage = {
-        id: Math.random().toString(36).substr(2, 9),
-        sender: "ai",
-        text: responseText,
-        timestamp: new Date().toLocaleTimeString()
-      };
-      const finalMsgList = [...updated, aiResponse];
-      setMessages(finalMsgList);
-      saveChatHistory(storageKey, finalMsgList);
-    }, 1000);
+    void send(promptText);
   };
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputValue.trim() || !storageKey) return;
-
-    const userMsg: ChatMessage = {
-      id: Math.random().toString(36).substr(2, 9),
-      sender: "user",
-      text: inputValue,
-      timestamp: new Date().toLocaleTimeString()
-    };
-
-    const updated = [...messages, userMsg];
-    setMessages(updated);
-    saveChatHistory(storageKey, updated);
+    const question = inputValue;
     setInputValue("");
-
-    // Simulate AI response based on the synthesis matrix context
-    setTimeout(() => {
-      const aiResponse: ChatMessage = {
-        id: Math.random().toString(36).substr(2, 9),
-        sender: "ai",
-        text: `[Interactive Analysis Mode] Under the strict privacy design of this microservice, your data is processed entirely client-side. I have digested your inquiry regarding this matrix: "${userMsg.text}". Let's explore how these alignments impact your target vector.`,
-        timestamp: new Date().toLocaleTimeString()
-      };
-      const finalMsgList = [...updated, aiResponse];
-      setMessages(finalMsgList);
-      saveChatHistory(storageKey, finalMsgList);
-    }, 1000);
+    void send(question);
   };
 
   const handleLoadSession = (session: any) => {
@@ -382,7 +280,7 @@ export default function ClientChat({
               );
             })}
 
-            {isLLMLoading && (
+            {(isLLMLoading || isThinking) && (
               <div className="flex gap-3 max-w-[85%] self-start animate-pulse">
                 {/* Avatar */}
                 <div className="w-7.5 h-7.5 rounded-full flex items-center justify-center shrink-0 border bg-stone-100 border-stone-200 text-stone-800">
@@ -412,8 +310,8 @@ export default function ClientChat({
         <div className="relative flex items-center">
           <input
             type="text"
-            disabled={!storageKey}
-            placeholder={storageKey ? "Ask about your alignments..." : "Submit parameters first..."}
+            disabled={!storageKey || isThinking}
+            placeholder={storageKey ? (isThinking ? "The master is reading..." : "Ask anything, or give a past date...") : "Submit parameters first..."}
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             className="w-full bg-white border border-stone-200 text-stone-900 pl-4 pr-12 py-2.5 rounded-xl outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-400 transition disabled:opacity-50 text-xs"

@@ -13,7 +13,22 @@ def calculate_time_metrics(
     
     If timezone_offset is not provided, it is approximated from the longitude.
     """
-    local_dt = datetime.strptime(f"{birth_date} {birth_time}", "%Y-%m-%d %H:%M:%S")
+    branch_time_map = {
+        "Zi": "00:00:00",
+        "Chou": "02:00:00",
+        "Yin": "04:00:00",
+        "Mao": "06:00:00",
+        "Chen": "08:00:00",
+        "Si": "10:00:00",
+        "Wu": "12:00:00",
+        "Wei": "14:00:00",
+        "Shen": "16:00:00",
+        "You": "18:00:00",
+        "Xu": "20:00:00",
+        "Hai": "22:00:00",
+    }
+    resolved_time = branch_time_map.get(birth_time, birth_time)
+    local_dt = datetime.strptime(f"{birth_date} {resolved_time}", "%Y-%m-%d %H:%M:%S")
     
     if timezone_offset is None:
         timezone_offset = float(round(longitude / 15.0))

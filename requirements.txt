@@ -9,3 +9,4 @@ pydantic>=2.0.0
 pyswisseph>=2.00.0-2
 python-dotenv>=1.0.0
 anthropic>=0.18.0
+py-iztro>=0.1.5  # ZWDS engine (iztro via pythonmonkey; runs in-process, no Node)

@@ -41,6 +41,7 @@ export interface StarMetadata {
   classification: string;
   archetype_definition: string;
   is_borrowed?: boolean;
+  mutagen?: string;
 }
 
 export interface ZWDSPalace {
@@ -48,12 +49,13 @@ export interface ZWDSPalace {
   stem_branch: string;
   stars: string[];
   decadal_range?: string;
-  main_stars?: { name: string; status?: string; is_borrowed?: boolean }[];
+  main_stars?: { name: string; status?: string; is_borrowed?: boolean; mutagen?: string }[];
   minor_stars?: string[];
   changsheng?: string;
   pillar_gods?: string[];
   one_year_luck?: string;
   stars_metadata?: StarMetadata[];
+  intensity?: number;
 }
 
 export interface ZWDSMatrix {
@@ -61,6 +63,8 @@ export interface ZWDSMatrix {
   yearly_stem_branch: string;
   monthly_branch: string;
   lunar_date_str: string;
+  life_master?: string;
+  body_master?: string;
 }
 
 export interface AstrologyAspect {

@@ -10,7 +10,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "clsx": "^2.1.1",
+    "framer-motion": "^12.40.0",
+    "iztro": "^2.5.8",
     "lucide-react": "^1.21.0",
+    "lunar-javascript": "^1.7.7",
     "react": "^19.2.6",
     "react-dom": "^19.2.6"
   },

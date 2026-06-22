@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect } from "react";
 import type { AstrologyRequest, TargetVector, Gender } from "../types";
 import { Search, MapPin, Loader2, Compass } from "lucide-react";
 
@@ -7,9 +7,24 @@ interface InputsModuleProps {
   isLoading: boolean;
 }
 
+const TIME_BRANCHES = [
+  { value: "Zi", label: "子 (23:00 - 00:59)" },
+  { value: "Chou", label: "丑 (01:00 - 02:59)" },
+  { value: "Yin", label: "寅 (03:00 - 04:59)" },
+  { value: "Mao", label: "卯 (05:00 - 06:59)" },
+  { value: "Chen", label: "辰 (07:00 - 08:59)" },
+  { value: "Si", label: "巳 (09:00 - 10:59)" },
+  { value: "Wu", label: "午 (11:00 - 12:59)" },
+  { value: "Wei", label: "未 (13:00 - 14:59)" },
+  { value: "Shen", label: "申 (15:00 - 16:59)" },
+  { value: "You", label: "酉 (17:00 - 18:59)" },
+  { value: "Xu", label: "戌 (19:00 - 20:59)" },
+  { value: "Hai", label: "亥 (21:00 - 22:59)" }
+];
+
 export default function InputsModule({ onSubmit, isLoading }: InputsModuleProps) {
   const [birthDate, setBirthDate] = useState("1990-05-15");
-  const [birthTime, setBirthTime] = useState("12:00:00");
+  const [birthTime, setBirthTime] = useState("Wu");
   const [gender, setGender] = useState<Gender>("M");
   const [targetVector, setTargetVector] = useState<TargetVector>("wealth");
   
@@ -23,106 +38,6 @@ export default function InputsModule({ onSubmit, isLoading }: InputsModuleProps)
   const [latitude, setLatitude] = useState(37.7749);
   const [longitude, setLongitude] = useState(-122.4194);
   const [selectedPlaceName, setSelectedPlaceName] = useState("San Francisco, CA");
-
-  // Ref for cursor-aware time input mask
-  const timeInputRef = useRef<HTMLInputElement>(null);
-  const isDeleting = useRef(false);
-
-  // Format raw digit string into HH:MM:SS layout
-  const formatTimeDigits = useCallback((digits: string): string => {
-    let f = "";
-    if (digits.length > 0) f += digits.slice(0, 2);
-    if (digits.length > 2) f += ":" + digits.slice(2, 4);
-    if (digits.length > 4) f += ":" + digits.slice(4, 6);
-    return f;
-  }, []);
-
-  // Handle backspace: skip over : separators and delete the digit before them
-  const handleTimeKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Backspace") {
-      isDeleting.current = true;
-      const input = e.currentTarget;
-      const pos = input.selectionStart ?? 0;
-
-      // If cursor is right after a ":", skip over it and delete the digit before
-      if (pos > 0 && birthTime[pos - 1] === ":") {
-        e.preventDefault();
-        // Remove the digit before the colon (pos-2), and the colon itself will reformat
-        const digits = birthTime.replace(/\D/g, "");
-        const digitIndex = birthTime.slice(0, pos - 1).replace(/\D/g, "").length - 1;
-        if (digitIndex >= 0) {
-          const newDigits = digits.slice(0, digitIndex) + digits.slice(digitIndex + 1);
-          const newFormatted = formatTimeDigits(newDigits);
-          setBirthTime(newFormatted);
-          // Restore cursor to the correct position after React re-renders
-          requestAnimationFrame(() => {
-            if (timeInputRef.current) {
-              const newPos = Math.max(0, pos - 2);
-              timeInputRef.current.setSelectionRange(newPos, newPos);
-            }
-          });
-        }
-        return;
-      }
-
-      // Normal backspace (not at a colon boundary) — let the onChange handle it
-      // but flag that we're deleting so onChange skips auto-formatting
-    } else {
-      isDeleting.current = false;
-    }
-  }, [birthTime, formatTimeDigits]);
-
-  // Handle forward typing with auto-format, but skip re-format during deletion
-  const handleTimeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const input = e.target;
-    const rawValue = input.value;
-    const cursorPos = input.selectionStart ?? rawValue.length;
-
-    if (isDeleting.current) {
-      // During backspace: accept the browser's native deletion result,
-      // then reformat from the remaining digits
-      const digits = rawValue.replace(/\D/g, "");
-      const formatted = formatTimeDigits(digits);
-      setBirthTime(formatted);
-
-      // Calculate where the cursor should land after reformatting
-      requestAnimationFrame(() => {
-        if (timeInputRef.current) {
-          // Count how many digits are before the cursor in the raw deleted string
-          const digitsBeforeCursor = rawValue.slice(0, cursorPos).replace(/\D/g, "").length;
-          // Map that digit count back to a position in the formatted string
-          let mappedPos = 0;
-          let digitsSeen = 0;
-          for (let i = 0; i < formatted.length && digitsSeen < digitsBeforeCursor; i++) {
-            mappedPos = i + 1;
-            if (formatted[i] !== ":") digitsSeen++;
-          }
-          timeInputRef.current.setSelectionRange(mappedPos, mappedPos);
-        }
-      });
-      isDeleting.current = false;
-      return;
-    }
-
-    // Forward typing: strip non-digits and reformat
-    const digits = rawValue.replace(/\D/g, "").slice(0, 6);
-    const formatted = formatTimeDigits(digits);
-    setBirthTime(formatted);
-
-    // Restore cursor: account for auto-inserted colons
-    requestAnimationFrame(() => {
-      if (timeInputRef.current) {
-        const digitsBeforeCursor = rawValue.slice(0, cursorPos).replace(/\D/g, "").length;
-        let mappedPos = 0;
-        let digitsSeen = 0;
-        for (let i = 0; i < formatted.length && digitsSeen < digitsBeforeCursor; i++) {
-          mappedPos = i + 1;
-          if (formatted[i] !== ":") digitsSeen++;
-        }
-        timeInputRef.current.setSelectionRange(mappedPos, mappedPos);
-      }
-    });
-  }, [formatTimeDigits]);
 
   // Debounced geocoding query matching OSM Nominatim usage requirements
   useEffect(() => {
@@ -211,19 +126,19 @@ export default function InputsModule({ onSubmit, isLoading }: InputsModuleProps)
           </div>
           <div>
             <label className="block text-[11px] font-bold tracking-wider text-stone-500 uppercase font-sans mb-2">
-              Birth Time (Local)
+              Birth Time (Local Branch)
             </label>
-            <input
-              ref={timeInputRef}
-              type="text"
-              required
-              placeholder="12:00:00"
-              maxLength={8}
+            <select
               value={birthTime}
-              onKeyDown={handleTimeKeyDown}
-              onChange={handleTimeChange}
-              className="w-full h-11 px-3 bg-white border border-stone-300 rounded-lg text-stone-900 placeholder-stone-400 focus:outline-none focus:border-stone-950 text-sm flex items-center font-sans font-medium transition-colors duration-200 hover:border-stone-400"
-            />
+              onChange={(e) => setBirthTime(e.target.value)}
+              className="w-full h-11 px-3 bg-white border border-stone-300 rounded-lg text-stone-900 focus:outline-none focus:border-stone-950 text-sm font-sans font-medium transition-colors duration-200 hover:border-stone-400 cursor-pointer"
+            >
+              {TIME_BRANCHES.map((tb) => (
+                <option key={tb.value} value={tb.value}>
+                  {tb.label}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
