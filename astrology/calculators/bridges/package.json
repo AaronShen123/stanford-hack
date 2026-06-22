@@ -1,0 +1,9 @@
+{
+  "name": "iztro-bridge",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Node.js subprocess bridge for iztro ZWDS engine",
+  "dependencies": {
+    "iztro": "^2.5.8"
+  }
+}

@@ -1,6 +1,7 @@
 const fs = require('fs');
 
 const starTranslations = {
+    // Pinyin keys (used by fallback path)
     "Zi Wei": "Emperor",
     "Tian Fu": "Heavenly Mansion",
     "Zuo Fu": "Intellect",
@@ -32,7 +33,114 @@ const starTranslations = {
     "Hua Lu": "Hua Lu",
     "Hua Ji": "Hua Ji",
     "Hua Quan": "Hua Quan",
-    "Hua Ke": "Hua Ke"
+    "Hua Ke": "Hua Ke",
+    // Chinese keys (used by live iztro engine)
+    "紫微": "Emperor",
+    "天府": "Heavenly Mansion",
+    "左辅": "Intellect",
+    "右弼": "Right Assist",
+    "天机": "Advisor",
+    "太阳": "Sun",
+    "太阴": "Moon",
+    "武曲": "Finance",
+    "天同": "Mascot",
+    "廉贞": "Justice",
+    "贪狼": "Flirt",
+    "巨门": "Advocate",
+    "天梁": "Blessing",
+    "七杀": "Marshal",
+    "破军": "Pioneer",
+    "天相": "Minister",
+    "文曲": "Arts",
+    "文昌": "Academic",
+    "禄存": "Wealth Star",
+    "天魁": "Status",
+    "天钺": "Grace",
+    "擎羊": "Sternness",
+    "陀罗": "Obstacle",
+    "地空": "Void",
+    "地劫": "Exhaust",
+    "孤辰": "Gu Chen",
+    "天空": "Tian Kong",
+    "天巫": "Tian Wu",
+    "火星": "Fire Star",
+    "铃星": "Bell Star",
+    "天马": "Tian Ma",
+    "天喜": "Tian Xi",
+    "天姚": "Tian Yao",
+    "天刑": "Tian Xing",
+    "红鸾": "Red Phoenix",
+    "咸池": "Peach Blossom",
+    "天才": "Genius",
+    "天寿": "Longevity",
+    "天官": "Tian Guan",
+    "天福": "Tian Fu Aux",
+    "天德": "Tian De",
+    "月德": "Yue De",
+    "天贵": "Tian Gui",
+    "天月": "Tian Yue Aux",
+    "天哭": "Tian Ku",
+    "天虚": "Tian Xu",
+    "龙池": "Dragon Pool",
+    "凤阁": "Phoenix Pavilion",
+    "台辅": "Tai Fu",
+    "封诰": "Feng Gao",
+    "三台": "San Tai",
+    "八座": "Ba Zuo",
+    "恩光": "En Guang",
+    "天伤": "Tian Shang",
+    "天使": "Tian Shi",
+    "解神": "Jie Shen",
+    "华盖": "Hua Gai",
+    "截路": "Jie Lu",
+    "蜚廉": "Fei Lian",
+    "年解": "Nian Jie",
+    "寡宿": "Gua Su",
+    "破碎": "Po Sui",
+    "阴煞": "Yin Sha",
+    "旬空": "Xun Kong",
+    "空亡": "Kong Wang",
+    "天厨": "Tian Chu"
+};
+
+// Chinese palace name to English
+const palaceTranslations = {
+    "命宫": "Life Palace (命宮)",
+    "兄弟": "Siblings Palace (兄弟)",
+    "夫妻": "Marriage Palace (夫妻)",
+    "子女": "Child Palace (子女)",
+    "财帛": "Wealth Palace (財帛)",
+    "疾厄": "Health Palace (疾厄)",
+    "迁移": "Travel Palace (遷移)",
+    "仆役": "Friends Palace (交友)",
+    "官禄": "Career Palace (官祿)",
+    "田宅": "Property Palace (田宅)",
+    "福德": "Happy Palace (福德)",
+    "父母": "Parents Palace (父母)"
+};
+
+// Chinese Heavenly Stems to Pinyin
+const stemTranslations = {
+    "甲": "Jia", "乙": "Yi", "丙": "Bing", "丁": "Ding", "戊": "Wu",
+    "己": "Ji", "庚": "Geng", "辛": "Xin", "壬": "Ren", "癸": "Gui"
+};
+
+// Chinese Earthly Branches to Pinyin
+const branchTranslations = {
+    "子": "Zi", "丑": "Chou", "寅": "Yin", "卯": "Mao", "辰": "Chen", "巳": "Si",
+    "午": "Wu", "未": "Wei", "申": "Shen", "酉": "You", "戌": "Xu", "亥": "Hai"
+};
+
+// Chinese brightness levels to English
+const brightnessTranslations = {
+    "庙": "Radiant", "旺": "Radiant", "得": "Radiant", "利": "Radiant", "平": "Neutral", "不": "Dark", "陷": "Exhaust"
+};
+
+// Chinese changsheng12 stages to English
+const changshengTranslations = {
+    "长生": "Birth", "沐浴": "Bath", "冠带": "Youth", "临官": "Arrive",
+    "帝旺": "Imperial", "衰": "Decay", "病": "Sickness", "死": "Death",
+    "墓": "Grave", "绝": "Cut", "胎": "Tomb", "养": "Exhaust"
 };
 
 const majorStarNames = [
@@ -143,6 +251,34 @@ function buildStarsMetadata(mainStars, minorStars) {
     return metadata;
 }
 
+function computeLnyDay(year) {
+    const KNOWN_LNY = {
+        1900: 31, 1901: 19, 1902: 8, 1903: 29, 1904: 16, 1905: 4, 1906: 25, 1907: 13, 1908: 2, 1909: 22,
+        1910: 10, 1911: 30, 1912: 18, 1913: 6, 1914: 26, 1915: 14, 1916: 3, 1917: 23, 1918: 11, 1919: 1,
+        1920: 20, 1921: 8, 1922: 28, 1923: 16, 1924: 5, 1925: 24, 1926: 13, 1927: 2, 1928: 23, 1929: 10,
+        1930: 30, 1931: 17, 1932: 6, 1933: 26, 1934: 14, 1935: 4, 1936: 24, 1937: 11, 1938: 31, 1939: 19,
+        1940: 8, 1941: 27, 1942: 15, 1943: 5, 1944: 25, 1945: 13, 1946: 2, 1947: 22, 1948: 10, 1949: 29,
+        1950: 17, 1951: 6, 1952: 27, 1953: 14, 1954: 3, 1955: 24, 1956: 12, 1957: 31, 1958: 18, 1959: 8,
+        1960: 28, 1961: 15, 1962: 5, 1963: 25, 1964: 13, 1965: 2, 1966: 21, 1967: 9, 1968: 30, 1969: 17,
+        1970: 6, 1971: 27, 1972: 15, 1973: 3, 1974: 23, 1975: 11, 1976: 31, 1977: 18, 1978: 7, 1979: 28,
+        1980: 16, 1981: 5, 1982: 25, 1983: 13, 1984: 2, 1985: 20, 1986: 9, 1987: 29, 1988: 17, 1989: 6,
+        1990: 27, 1991: 15, 1992: 4, 1993: 23, 1994: 10, 1995: 31, 1996: 19, 1997: 7, 1998: 28, 1999: 16,
+        2000: 5, 2001: 24, 2002: 12, 2003: 1, 2004: 22, 2005: 9, 2006: 29, 2007: 18, 2008: 7, 2009: 26,
+        2010: 14, 2011: 3, 2012: 23, 2013: 10, 2014: 31, 2015: 19, 2016: 8, 2017: 28, 2018: 16, 2019: 5,
+        2020: 25, 2021: 12, 2022: 1, 2023: 22, 2024: 10, 2025: 29, 2026: 17, 2027: 6, 2028: 26, 2029: 13,
+        2030: 3, 2031: 23, 2032: 11, 2033: 31, 2034: 19, 2035: 8, 2036: 28, 2037: 15, 2038: 4, 2039: 24,
+        2040: 12, 2041: 1, 2042: 22, 2043: 10, 2044: 30, 2045: 17, 2046: 6, 2047: 26, 2048: 14, 2049: 2,
+        2050: 23, 2051: 11, 2052: 1, 2053: 19, 2054: 8, 2055: 28, 2056: 15, 2057: 4, 2058: 24, 2059: 12,
+        2060: 2, 2061: 21, 2062: 9, 2063: 29, 2064: 17, 2065: 5, 2066: 26, 2067: 14, 2068: 3, 2069: 23,
+        2070: 11, 2071: 31, 2072: 19, 2073: 7, 2074: 27, 2075: 15, 2076: 5, 2077: 24, 2078: 12, 2079: 2,
+        2080: 22, 2081: 9, 2082: 29, 2083: 17, 2084: 6, 2085: 26, 2086: 14, 2087: 3, 2088: 24, 2089: 10,
+        2090: 30, 2091: 18, 2092: 7, 2093: 27, 2094: 15, 2095: 5, 2096: 25, 2097: 12, 2098: 1, 2099: 21, 2100: 9
+    };
+    if (KNOWN_LNY[year] !== undefined) return KNOWN_LNY[year];
+    const cycleYear = 2000 + ((year - 2000) % 19 + 19) % 19;
+    return KNOWN_LNY[cycleYear] || 30;
+}
+
 function main() {
     try {
         const inputData = fs.readFileSync(0, 'utf-8');
@@ -153,9 +289,9 @@ function main() {
         const payload = JSON.parse(inputData);
         
         // Attempt to import the iztro library
-        let iztro;
+        let iztroLib;
         try {
-            iztro = require('iztro');
+            iztroLib = require('iztro');
         } catch (e) {
             // Fallback response matching standard ZWDS schema structures
             const fallbackResponse = {
@@ -326,12 +462,7 @@ function main() {
                 const m_stem_idx = (base_stem + (monthVal - 1)) % 10;
                 const computed_monthly_branch = `${stems[m_stem_idx]}-${m_branch}`;
                 
-                const lny_offsets = {
-                    1990: 27,
-                    2000: 36,
-                    2026: 48
-                };
-                const lny_day = lny_offsets[yearVal] || 30;
+                const lny_day = computeLnyDay(yearVal);
                 
                 const getDayOfYear = (y, m, d) => {
                     const days = [31, (y % 4 === 0 && (y % 100 !== 0 || y % 400 === 0)) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
@@ -345,7 +476,7 @@ function main() {
                 let days_since = doy - lny_day;
                 if (days_since < 0) {
                     l_year = yearVal - 1;
-                    const prev_lny = lny_offsets[l_year] || 30;
+                    const prev_lny = computeLnyDay(l_year);
                     const prev_days_in_year = (l_year % 4 === 0 && (l_year % 100 !== 0 || l_year % 400 === 0)) ? 366 : 365;
                     days_since = doy + (prev_days_in_year - prev_lny);
                 }
@@ -378,67 +509,93 @@ function main() {
         const timeIndex = Math.floor((hour + 1) % 24 / 2);
         const genderStr = (payload.gender === 'F') ? 'female' : 'male';
         
-        const chart = iztro.astrology.bySolar(payload.date, timeIndex, genderStr);
+        const chart = iztroLib.astro.bySolar(payload.date, timeIndex, genderStr);
         
         const palaces = chart.palaces.map(p => {
+            // Translate Chinese branch from iztro to Pinyin
+            const rawBranchCN = p.earthlyBranch;
+            const branch = branchTranslations[rawBranchCN] || rawBranchCN;
+            const rawStemCN = p.heavenlyStem;
+            const stem = stemTranslations[rawStemCN] || rawStemCN;
+            
+            // Translate palace name from Chinese
+            const palaceName = palaceTranslations[p.name] || p.name;
+            
+            // Build raw stars list for legacy compatibility
             const rawStars = (p.majorStars || [])
                 .concat(p.minorStars || [])
                 .concat(p.adjectiveStars || []);
             
             const stars = rawStars.map(s => {
-                let name = s.name;
+                const translatedName = starTranslations[s.name] || s.name;
                 if (s.brightness) {
-                    name += `(${s.brightness})`;
+                    const translatedBrightness = brightnessTranslations[s.brightness] || s.brightness;
+                    return `${translatedName}(${translatedBrightness})`;
                 }
-                return name;
+                return translatedName;
             });
             
-            if (p.mutagen) {
-                stars.push(`Hua-${p.mutagen}`);
-            }
+            // Translate decadal stem-branch
+            const decStemCN = p.decadal.heavenlyStem;
+            const decBranchCN = p.decadal.earthlyBranch;
+            const decStem = stemTranslations[decStemCN] || decStemCN;
+            const decBranch = branchTranslations[decBranchCN] || decBranchCN;
             
-            // Derive branch name (e.g. "Si")
-            const branch = p.decadal.earthlyBranch;
-            const details = branchPalaceDetails[branch] || { changsheng: "", pillar_gods: [] };
-            
-            // Build mainStars list
+            // Build mainStars list with translated names and brightness
             const mainStars = (p.majorStars || []).map(s => {
                 const name = starTranslations[s.name] || s.name;
-                let status = s.brightness || "";
-                if (status === "廟" || status === "Miao") {
-                    status = "Radiant";
-                } else if (status === "陷" || status === "Xian") {
-                    status = "Exhaust";
-                } else if (status) {
-                    status = "Radiant"; // fallback for other bright statuses
-                }
+                const status = brightnessTranslations[s.brightness] || s.brightness || "";
                 return { name, status };
             });
             
-            // Build minorStars list
+            // Build minorStars list from minor + adjective stars
             const minorStars = (p.minorStars || [])
                 .concat(p.adjectiveStars || [])
                 .map(s => starTranslations[s.name] || s.name);
             
+            // Translate changsheng12 stage
+            const changsheng = changshengTranslations[p.changsheng12] || p.changsheng12 || "";
+            
+            // Get pillar gods from branch lookup
+            const details = branchPalaceDetails[branch] || { changsheng: "", pillar_gods: [] };
+            
+            // Get 1-year luck ages
+            const oneYearLuck = (p.ages && p.ages.length > 0)
+                ? p.ages.slice(0, 3).join(", ")
+                : (branchToYear[branch] || "");
+            
             return {
-                name: p.name,
-                stem_branch: p.decadal.heavenlyStem + '-' + p.decadal.earthlyBranch,
+                name: palaceName,
+                stem_branch: decStem + '-' + decBranch,
                 stars: stars,
-                decadal_range: p.decadal.range[0] + '-' + p.decadal.range[1],
+                decadal_range: p.decadal.range[0] + '–' + p.decadal.range[1],
                 main_stars: mainStars,
                 minor_stars: minorStars,
-                changsheng: details.changsheng,
+                changsheng: changsheng,
                 pillar_gods: details.pillar_gods,
-                one_year_luck: branchToYear[branch] || "",
+                one_year_luck: oneYearLuck,
                 stars_metadata: buildStarsMetadata(mainStars, minorStars)
             };
         });
         
+        // Extract yearly stem-branch from chineseDate (format: "庚辰 丙戌 丁未 庚子")
+        const chineseDateParts = (chart.chineseDate || "").split(" ");
+        let yearlyStemBranch = "";
+        let monthlyBranch = "";
+        if (chineseDateParts.length >= 2) {
+            const yStem = stemTranslations[chineseDateParts[0][0]] || chineseDateParts[0][0];
+            const yBranch = branchTranslations[chineseDateParts[0][1]] || chineseDateParts[0][1];
+            yearlyStemBranch = yStem + '-' + yBranch;
+            const mStem = stemTranslations[chineseDateParts[1][0]] || chineseDateParts[1][0];
+            const mBranch = branchTranslations[chineseDateParts[1][1]] || chineseDateParts[1][1];
+            monthlyBranch = mStem + '-' + mBranch;
+        }
+        
         console.log(JSON.stringify({
             palaces: palaces,
-            yearly_stem_branch: chart.basic.yearlyStemBranch,
-            monthly_branch: chart.basic.monthlyBranch,
-            lunar_date_str: chart.basic.lunarDate
+            yearly_stem_branch: yearlyStemBranch,
+            monthly_branch: monthlyBranch,
+            lunar_date_str: chart.lunarDate || ""
         }));
         
     } catch (err) {

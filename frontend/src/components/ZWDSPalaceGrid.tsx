@@ -73,20 +73,9 @@ const branchPalaceDetails: Record<string, { changshengStage: string; pillarGods:
   "Chen": { changshengStage: "Exhaust", pillarGods: ["Farmer", "Weaver"] }
 };
 
-const branchToPalaceInfo: Record<string, { palaceName: string; decadalAgeRange: string }> = {
-  "Si": { palaceName: "Life Palace", decadalAgeRange: "4–13" },
-  "Wu": { palaceName: "Parents Palace", decadalAgeRange: "14–23" },
-  "Wei": { palaceName: "Happy Palace", decadalAgeRange: "24–33" },
-  "Shen": { palaceName: "Property Palace", decadalAgeRange: "34–43" },
-  "You": { palaceName: "Career Palace", decadalAgeRange: "44–53" },
-  "Xu": { palaceName: "Friends Palace", decadalAgeRange: "54–63" },
-  "Hai": { palaceName: "Travel Palace", decadalAgeRange: "64–73" },
-  "Zi": { palaceName: "Health Palace", decadalAgeRange: "74–83" },
-  "Chou": { palaceName: "Wealth Palace", decadalAgeRange: "84–93" },
-  "Yin": { palaceName: "Child Palace", decadalAgeRange: "94–103" },
-  "Mao": { palaceName: "Marriage Palace", decadalAgeRange: "104–113" },
-  "Chen": { palaceName: "Siblings Palace", decadalAgeRange: "114–123" }
-};
+// Palace names and decadal age ranges are DYNAMIC — computed by the iztro engine
+// based on birth month + hour. They must NOT be hardcoded to branch positions.
+// The backend returns palace.name and palace.decadal_range directly.
 
 const DynamicPalaceCell = ({ data }: { data: PalaceDataPayload }) => {
   if (!data) return <div className="bg-white border border-stone-200 rounded-xl min-h-[175px]" />;
@@ -316,12 +305,11 @@ export default function ZWDSPalaceGrid({
         
         {/* Render Palaces around the border */}
         {gridCells.map(({ palace, coords, hasHuaJi, hasHuaLu, branch, mainStars, changshengStage, pillarGods, oneYearLuck, minorStars }, idx) => {
-          const info = branchToPalaceInfo[branch] || { palaceName: palace.name, decadalAgeRange: palace.decadal_range || "00-00" };
           
           const cellData: PalaceDataPayload = {
-            palaceName: info.palaceName,
+            palaceName: palace.name,
             branchLabel: branch,
-            decadalAgeRange: info.decadalAgeRange,
+            decadalAgeRange: palace.decadal_range || "00-00",
             mainStars: mainStars,
             minorStars: minorStars,
             changshengStage: changshengStage,
