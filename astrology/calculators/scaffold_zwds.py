@@ -42,6 +42,46 @@ STAR_MAPPING = {
     "Gu Chen": {"name": "Gu Chen", "classification": "Malefic", "archetype": "Loneliness, independence, and social distance."},
     "Tian Kong": {"name": "Tian Kong", "classification": "Malefic", "archetype": "Sky void, detachment, and loss of material focus."},
     "Advocate": {"name": "Advocate", "classification": "Malefic", "archetype": "Communication, critical analysis, hidden obstacles, and debate."},
+
+    # Auxiliary Stars
+    "Fire Star": {"name": "Fire Star", "classification": "Malefic", "archetype": "Intense energy, impulsiveness, sudden changes, and temper."},
+    "Bell Star": {"name": "Bell Star", "classification": "Malefic", "archetype": "Latent tension, worries, calculation, and emotional pressure."},
+    "Tian Ma": {"name": "Tian Ma", "classification": "Benefic", "archetype": "Movement, change, travel, and active pursuit of wealth."},
+    "Tian Xi": {"name": "Tian Xi", "classification": "Benefic", "archetype": "Joy, celebration, marriage prospects, and pleasant events."},
+    "Tian Yao": {"name": "Tian Yao", "classification": "Neutral", "archetype": "Romance, physical attraction, charm, and social flexibility."},
+    "Tian Xing": {"name": "Tian Xing", "classification": "Malefic", "archetype": "Discipline, legal matters, self-control, and surgical procedures."},
+    "Red Phoenix": {"name": "Red Phoenix", "classification": "Benefic", "archetype": "Primary romance star, marriage, charm, and positive popularity."},
+    "Peach Blossom": {"name": "Peach Blossom", "classification": "Neutral", "archetype": "Sensual desires, physical romance, and artistic charm."},
+    "Genius": {"name": "Genius", "classification": "Benefic", "archetype": "Innate intelligence, quick wit, and specialized talents."},
+    "Longevity": {"name": "Longevity", "classification": "Benefic", "archetype": "Longevity, health preservation, and patient steady progress."},
+    "Tian Guan": {"name": "Tian Guan", "classification": "Benefic", "archetype": "Official promotion, public recognition, and career opportunities."},
+    "Tian Fu Aux": {"name": "Tian Fu Aux", "classification": "Benefic", "archetype": "Heavenly blessings, luck, and unexpected assistance."},
+    "Tian De": {"name": "Tian De", "classification": "Benefic", "archetype": "Heavenly virtue, resolving difficulties, and protection."},
+    "Yue De": {"name": "Yue De", "classification": "Benefic", "archetype": "Lunar virtue, emotional peace, and harmonious relationships."},
+    "Tian Gui": {"name": "Tian Gui", "classification": "Benefic", "archetype": "Nobility, assistance from superiors, and social status."},
+    "Tian Yue Aux": {"name": "Tian Yue Aux", "classification": "Malefic", "archetype": "Minor illness, temporary weakness, and health maintenance."},
+    "Tian Ku": {"name": "Tian Ku", "classification": "Malefic", "archetype": "Grief, crying, emotional release, and minor setbacks."},
+    "Tian Xu": {"name": "Tian Xu", "classification": "Malefic", "archetype": "Emptiness, false expectations, anxiety, and energy drain."},
+    "Dragon Pool": {"name": "Dragon Pool", "classification": "Benefic", "archetype": "Refinement, clean living environment, and high standards."},
+    "Phoenix Pavilion": {"name": "Phoenix Pavilion", "classification": "Benefic", "archetype": "Fame, reputation, artistic talent, and pleasant surroundings."},
+    "Tai Fu": {"name": "Tai Fu", "classification": "Benefic", "archetype": "Assistance, guidance, mentorship, and support."},
+    "Feng Gao": {"name": "Feng Gao", "classification": "Benefic", "archetype": "Honor, certificates, awards, and formal promotion."},
+    "San Tai": {"name": "San Tai", "classification": "Benefic", "archetype": "Support, social standing, and collaborative progress."},
+    "Ba Zuo": {"name": "Ba Zuo", "classification": "Benefic", "archetype": "Position, platform, authority, and status."},
+    "En Guang": {"name": "En Guang", "classification": "Benefic", "archetype": "Favor, special permissions, and support from key figures."},
+    "Tian Shang": {"name": "Tian Shang", "classification": "Malefic", "archetype": "Physical injury, stress-related accidents, and health issues."},
+    "Tian Shi": {"name": "Tian Shi", "classification": "Malefic", "archetype": "Sudden illness, temporary hospitalization, or health setbacks."},
+    "Jie Shen": {"name": "Jie Shen", "classification": "Benefic", "archetype": "Dissolving crisis, resolving disputes, and turning bad luck to good."},
+    "Hua Gai": {"name": "Hua Gai", "classification": "Neutral", "archetype": "Intellect, solitary pursuit, mysticism, and artistic eccentricity."},
+    "Jie Lu": {"name": "Jie Lu", "classification": "Malefic", "archetype": "Obstacles on the road, delays, and temporary blockages."},
+    "Fei Lian": {"name": "Fei Lian", "classification": "Malefic", "archetype": "Gossip, rumors, reputation damage, and small disputes."},
+    "Nian Jie": {"name": "Nian Jie", "classification": "Benefic", "archetype": "Yearly resolution of disputes and negative influences."},
+    "Gua Su": {"name": "Gua Su", "classification": "Malefic", "archetype": "Solitude, preference for independence, and marital distance."},
+    "Po Sui": {"name": "Po Sui", "classification": "Malefic", "archetype": "Broken plans, minor financial losses, and disrupted routines."},
+    "Yin Sha": {"name": "Yin Sha", "classification": "Malefic", "archetype": "Hidden rivals, underlying issues, and unexpected setbacks."},
+    "Xun Kong": {"name": "Xun Kong", "classification": "Malefic", "archetype": "Temporary void, empty outcome, and need for patience."},
+    "Kong Wang": {"name": "Kong Wang", "classification": "Malefic", "archetype": "Unpredictability, material loss, and focus on spirituality."},
+    "Tian Chu": {"name": "Tian Chu", "classification": "Benefic", "archetype": "Abundant food, culinary talents, and enjoyment of life."}
 }
 
 def build_stars_metadata(palace: Dict[str, Any]) -> list:
@@ -60,7 +100,8 @@ def build_stars_metadata(palace: Dict[str, Any]) -> list:
             "name": name,
             "brightness_index": brightness,
             "classification": info["classification"],
-            "archetype_definition": info["archetype"]
+            "archetype_definition": info["archetype"],
+            "is_borrowed": s.get("is_borrowed", False)
         })
     for name in palace.get("minor_stars", []):
         import re
@@ -347,6 +388,26 @@ class ScaffoldZWDSCalculator(AbstractZWDSCalculator):
         hour_label = hour_labels[h_branch_idx]
         
         lunar_date_str = f"Year {yearly_stem_branch.split('-')[0]} ({l_year}), Month {l_month}, Day {l_day}, Hour {hour_label} (estimated)"
+
+        # Borrow stars for empty palaces in fallback
+        for i in range(12):
+            p = palaces[i]
+            if not p.get("main_stars"):
+                opp_idx = (i + 6) % 12
+                opp_p = palaces[opp_idx]
+                borrowed = []
+                for star in opp_p.get("main_stars", []):
+                    borrowed.append({
+                        "name": star["name"],
+                        "status": star.get("status", ""),
+                        "is_borrowed": True
+                    })
+                p["main_stars"] = borrowed
+                for star in borrowed:
+                    star_str = star["name"]
+                    if star["status"]:
+                        star_str += f"({star['status']})"
+                    p.setdefault("stars", []).append(star_str)
 
         for p in palaces:
             p["stars_metadata"] = build_stars_metadata(p)

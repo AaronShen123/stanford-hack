@@ -76,10 +76,12 @@ class StarMetadata(BaseModel):
     brightness_index: str = "Neutral" # Radiant, Neutral, Dark
     classification: str = "Benefic" # Benefic, Malefic
     archetype_definition: str = ""
+    is_borrowed: Optional[bool] = False
 
 class MainStarModel(BaseModel):
     name: str
     status: Optional[str] = ""
+    is_borrowed: Optional[bool] = False
 
 class ZWDSPalace(BaseModel):
     name: str = Field(..., description="Palace name (e.g. Ming, Wealth, Career)")

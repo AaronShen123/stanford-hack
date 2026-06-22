@@ -216,7 +216,47 @@ const starMapping = {
     "Hua Ji": { classification: "Malefic", archetype: "Attachment, obsession, karmic debt, and obstacles." },
     "Gu Chen": { classification: "Malefic", archetype: "Loneliness, independence, and social distance." },
     "Tian Kong": { classification: "Malefic", archetype: "Sky void, detachment, and loss of material focus." },
-    "Advocate": { classification: "Malefic", archetype: "Communication, critical analysis, hidden obstacles, and debate." }
+    "Advocate": { classification: "Malefic", archetype: "Communication, critical analysis, hidden obstacles, and debate." },
+    
+    // Auxiliary Stars
+    "Fire Star": { classification: "Malefic", archetype: "Intense energy, impulsiveness, sudden changes, and temper." },
+    "Bell Star": { classification: "Malefic", archetype: "Latent tension, worries, calculation, and emotional pressure." },
+    "Tian Ma": { classification: "Benefic", archetype: "Movement, change, travel, and active pursuit of wealth." },
+    "Tian Xi": { classification: "Benefic", archetype: "Joy, celebration, marriage prospects, and pleasant events." },
+    "Tian Yao": { classification: "Neutral", archetype: "Romance, physical attraction, charm, and social flexibility." },
+    "Tian Xing": { classification: "Malefic", archetype: "Discipline, legal matters, self-control, and surgical procedures." },
+    "Red Phoenix": { classification: "Benefic", archetype: "Primary romance star, marriage, charm, and positive popularity." },
+    "Peach Blossom": { classification: "Neutral", archetype: "Sensual desires, physical romance, and artistic charm." },
+    "Genius": { classification: "Benefic", archetype: "Innate intelligence, quick wit, and specialized talents." },
+    "Longevity": { classification: "Benefic", archetype: "Longevity, health preservation, and patient steady progress." },
+    "Tian Guan": { classification: "Benefic", archetype: "Official promotion, public recognition, and career opportunities." },
+    "Tian Fu Aux": { classification: "Benefic", archetype: "Heavenly blessings, luck, and unexpected assistance." },
+    "Tian De": { classification: "Benefic", archetype: "Heavenly virtue, resolving difficulties, and protection." },
+    "Yue De": { classification: "Benefic", archetype: "Lunar virtue, emotional peace, and harmonious relationships." },
+    "Tian Gui": { classification: "Benefic", archetype: "Nobility, assistance from superiors, and social status." },
+    "Tian Yue Aux": { classification: "Malefic", archetype: "Minor illness, temporary weakness, and health maintenance." },
+    "Tian Ku": { classification: "Malefic", archetype: "Grief, crying, emotional release, and minor setbacks." },
+    "Tian Xu": { classification: "Malefic", archetype: "Emptiness, false expectations, anxiety, and energy drain." },
+    "Dragon Pool": { classification: "Benefic", archetype: "Refinement, clean living environment, and high standards." },
+    "Phoenix Pavilion": { classification: "Benefic", archetype: "Fame, reputation, artistic talent, and pleasant surroundings." },
+    "Tai Fu": { classification: "Benefic", archetype: "Assistance, guidance, mentorship, and support." },
+    "Feng Gao": { classification: "Benefic", archetype: "Honor, certificates, awards, and formal promotion." },
+    "San Tai": { classification: "Benefic", archetype: "Support, social standing, and collaborative progress." },
+    "Ba Zuo": { classification: "Benefic", archetype: "Position, platform, authority, and status." },
+    "En Guang": { classification: "Benefic", archetype: "Favor, special permissions, and support from key figures." },
+    "Tian Shang": { classification: "Malefic", archetype: "Physical injury, stress-related accidents, and health issues." },
+    "Tian Shi": { classification: "Malefic", archetype: "Sudden illness, temporary hospitalization, or health setbacks." },
+    "Jie Shen": { classification: "Benefic", archetype: "Dissolving crisis, resolving disputes, and turning bad luck to good." },
+    "Hua Gai": { classification: "Neutral", archetype: "Intellect, solitary pursuit, mysticism, and artistic eccentricity." },
+    "Jie Lu": { classification: "Malefic", archetype: "Obstacles on the road, delays, and temporary blockages." },
+    "Fei Lian": { classification: "Malefic", archetype: "Gossip, rumors, reputation damage, and small disputes." },
+    "Nian Jie": { classification: "Benefic", archetype: "Yearly resolution of disputes and negative influences." },
+    "Gua Su": { classification: "Malefic", archetype: "Solitude, preference for independence, and marital distance." },
+    "Po Sui": { classification: "Malefic", archetype: "Broken plans, minor financial losses, and disrupted routines." },
+    "Yin Sha": { classification: "Malefic", archetype: "Hidden rivals, underlying issues, and unexpected setbacks." },
+    "Xun Kong": { classification: "Malefic", archetype: "Temporary void, empty outcome, and need for patience." },
+    "Kong Wang": { classification: "Malefic", archetype: "Unpredictability, material loss, and focus on spirituality." },
+    "Tian Chu": { classification: "Benefic", archetype: "Abundant food, culinary talents, and enjoyment of life." }
 };
 
 function buildStarsMetadata(mainStars, minorStars) {
@@ -577,6 +617,54 @@ function main() {
                 stars_metadata: buildStarsMetadata(mainStars, minorStars)
             };
         });
+
+        // Borrow stars for empty palaces
+        for (let i = 0; i < 12; i++) {
+            const palace = palaces[i];
+            if (!palace.main_stars || palace.main_stars.length === 0) {
+                const opposite_idx = (i + 6) % 12;
+                const opposite_palace = palaces[opposite_idx];
+                
+                const borrowed_main_stars = [];
+                (opposite_palace.main_stars || []).forEach(star => {
+                    borrowed_main_stars.push({
+                        name: star.name,
+                        status: star.status || "",
+                        is_borrowed: true
+                    });
+                });
+                palace.main_stars = borrowed_main_stars;
+                
+                // Build metadata for borrowed stars and append to stars_metadata
+                borrowed_main_stars.forEach(star => {
+                    const name = star.name;
+                    const status = star.status || "";
+                    let brightness = "Neutral";
+                    if (status === "Radiant" || status === "廟" || status === "Miao") {
+                        brightness = "Radiant";
+                    } else if (status === "Exhaust" || status === "陷" || status === "Xian" || status === "Dark") {
+                        brightness = "Dark";
+                    }
+                    
+                    const info = starMapping[name] || { classification: "Benefic", archetype: "" };
+                    if (!palace.stars_metadata) palace.stars_metadata = [];
+                    palace.stars_metadata.push({
+                        name: name,
+                        brightness_index: brightness,
+                        classification: info.classification,
+                        archetype_definition: info.archetype,
+                        is_borrowed: true
+                    });
+                    
+                    // Also append to the plain stars array for legacy compatibility
+                    let starStr = name;
+                    if (status) {
+                        starStr += `(${status})`;
+                    }
+                    palace.stars.push(starStr);
+                });
+            }
+        }
         
         // Extract yearly stem-branch from chineseDate (format: "庚辰 丙戌 丁未 庚子")
         const chineseDateParts = (chart.chineseDate || "").split(" ");

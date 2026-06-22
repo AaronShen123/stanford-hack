@@ -14,7 +14,7 @@ interface PalaceDataPayload {
   palaceName: string;
   branchLabel: string;
   decadalAgeRange: string;
-  mainStars?: { name: string; status?: string }[]; 
+  mainStars?: { name: string; status?: string; is_borrowed?: boolean }[]; 
   minorStars?: string[];   
   changshengStage?: string; 
   pillarGods?: string[];   
@@ -98,10 +98,15 @@ const DynamicPalaceCell = ({ data }: { data: PalaceDataPayload }) => {
         {data.mainStars && data.mainStars.length > 0 ? (
           data.mainStars.map((star, idx) => (
             <div key={idx} className="flex items-baseline gap-1 text-xs font-extrabold text-stone-900 tracking-tight">
-              <span>{star.name}</span>
+              <span className={star.is_borrowed ? "text-stone-400 font-medium italic" : ""}>
+                {star.name}
+                {star.is_borrowed && <span className="text-[9px] font-normal text-stone-400 font-sans ml-1">(Borrowed)</span>}
+              </span>
               {star.status && (
                 <span className={`text-[9px] font-mono font-bold px-0.5 rounded ${
-                  star.status === 'Radiant' || star.status === 'Bright' || star.status === 'Shiny'
+                  star.is_borrowed
+                    ? 'text-stone-400 bg-stone-50/50'
+                    : star.status === 'Radiant' || star.status === 'Bright' || star.status === 'Shiny'
                     ? 'text-amber-600 bg-amber-50' 
                     : star.status === 'Xian' || star.status === 'Dark' || star.status === 'Ruinous' || star.status === 'Exhaust'
                     ? 'text-rose-600 bg-rose-50'
@@ -188,13 +193,13 @@ export default function ZWDSPalaceGrid({
     const coords = branchToGrid[branch] || { r: Math.floor(idx / 4) + 1, c: (idx % 4) + 1 };
     
     // Parse stars from backend or fallback to parsing from stars array
-    const mainStarsFromBackend = palace.main_stars?.map(s => ({ name: s.name, status: s.status || "" }));
+    const mainStarsFromBackend = palace.main_stars?.map(s => ({ name: s.name, status: s.status || "", is_borrowed: s.is_borrowed }));
     const minorStarsFromBackend = palace.minor_stars;
     const changshengFromBackend = palace.changsheng;
     const pillarGodsFromBackend = palace.pillar_gods;
     const oneYearLuckFromBackend = palace.one_year_luck;
 
-    let mainStars: { name: string; status: string }[] = [];
+    let mainStars: { name: string; status: string; is_borrowed?: boolean }[] = [];
     let minorStars: string[] = [];
     let changshengStage = "";
     let pillarGods: string[] = [];

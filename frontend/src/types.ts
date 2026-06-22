@@ -40,6 +40,7 @@ export interface StarMetadata {
   brightness_index: string;
   classification: string;
   archetype_definition: string;
+  is_borrowed?: boolean;
 }
 
 export interface ZWDSPalace {
@@ -47,7 +48,7 @@ export interface ZWDSPalace {
   stem_branch: string;
   stars: string[];
   decadal_range?: string;
-  main_stars?: { name: string; status?: string }[];
+  main_stars?: { name: string; status?: string; is_borrowed?: boolean }[];
   minor_stars?: string[];
   changsheng?: string;
   pillar_gods?: string[];
