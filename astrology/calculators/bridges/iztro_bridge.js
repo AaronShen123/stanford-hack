@@ -546,7 +546,8 @@ function main() {
         // If iztro is present, compute ZWDS chart dynamically
         const hour = parseInt(payload.time.split(':')[0], 10);
         // Map 24h to 12 Chinese double-hours (Zi, Chou, ..., Hai)
-        const timeIndex = Math.floor((hour + 1) % 24 / 2);
+        // Hour 23 is Late Zi (index 12 in iztro). Hour 0 is Early Zi (index 0).
+        const timeIndex = (hour === 23) ? 12 : Math.floor((hour + 1) / 2);
         const genderStr = (payload.gender === 'F') ? 'female' : 'male';
         
         const chart = iztroLib.astro.bySolar(payload.date, timeIndex, genderStr);
@@ -575,12 +576,6 @@ function main() {
                 return translatedName;
             });
             
-            // Translate decadal stem-branch
-            const decStemCN = p.decadal.heavenlyStem;
-            const decBranchCN = p.decadal.earthlyBranch;
-            const decStem = stemTranslations[decStemCN] || decStemCN;
-            const decBranch = branchTranslations[decBranchCN] || decBranchCN;
-            
             // Build mainStars list with translated names and brightness
             const mainStars = (p.majorStars || []).map(s => {
                 const name = starTranslations[s.name] || s.name;
@@ -606,7 +601,7 @@ function main() {
             
             return {
                 name: palaceName,
-                stem_branch: decStem + '-' + decBranch,
+                stem_branch: stem + '-' + branch,
                 stars: stars,
                 decadal_range: p.decadal.range[0] + '–' + p.decadal.range[1],
                 main_stars: mainStars,
